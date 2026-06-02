@@ -1,0 +1,12 @@
+{
+  "name": "bad_coffee",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "João Pedro Keidann , Abel Silva Neto , Davi Pereira Fagundes , Pedro Henrique Caldart Warmling, Carlos Roberto Da Silva Filho",
+  "license": "MIT",
+  "description": "Um jogo de Cafés VS Pragas, baseado em Brotato e Vampire Survivors"
+}
