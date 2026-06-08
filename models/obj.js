@@ -38,27 +38,60 @@ class Obj {
                 projectileType: 'bullet' // Tipo/Visual do projétil
             },
             {
-                id: 'MP5',
+                id: 'mp5',
                 name: 'Metralhadora  MP5',
                 type: 'weapon',
                 level: 1,
                 maxLevel: 5,
-                cooldown: 500,       // 1 tiro por segundo (1000ms)
-                timer: 0,             // Cronômetro interno
+                cooldown: 700,       // 1 tiro por segundo (1000ms)            // Cronômetro interno
                 damage: 5,           // Dano próprio da arma
                 projectileSpeed: 700, // Velocidade física da bala na tela
                 projectileType: 'bullet' // Tipo/Visual do projétil
             }, {
-                id: 'KS-23',
+                id: 'ks_23',
                 name: 'Escopeta KS-23',
+                type: 'weapon',
+                maxLevel: 5,
+                cooldown: 1500,         // Bem lenta (1 tiro a cada 2 segundos)
+                damage: 30,             // Muito dano
+                projectileSpeed: 250,   // Projétil mais pesado e lento
+                projectileType: 'buckshot'
+            },{
+                id: 'lightsaber',
+                name: 'sabre de luz',
                 type: 'weapon',
                 maxLevel: 5,
                 cooldown: 2000,         // Bem lenta (1 tiro a cada 2 segundos)
                 damage: 40,             // Muito dano
-                projectileSpeed: 250,   // Projétil mais pesado e lento
-                projectileType: 'buckshot'
+                projectileSpeed: 150,   // Projétil mais pesado e lento
+                projectileType: 'force'
             },{
-                
+                id: 'gjallahorn',
+                name: 'Gjallahorn',
+                type: 'weapon',
+                maxLevel: 5,
+                cooldown: 5000,         // Bem lenta (1 tiro a cada 2 segundos)
+                damage: 60,             // Muito dano
+                projectileSpeed: 350,   // Projétil mais pesado e lento
+                projectileType: 'big_boom'
+            },{
+                id: 'lance',
+                name: 'lanca',
+                type: 'weapon',
+                maxLevel: 5,
+                cooldown: 1550,         // Bem lenta (1 tiro a cada 2 segundos)
+                damage: 7,             // Muito dano
+                projectileSpeed: 350,   // Projétil mais pesado e lento
+                projectileType: 'spear'
+            },{
+                id: 'dagger',
+                name: 'adaga',
+                type: 'weapon',
+                maxLevel: 5,
+                cooldown: 950,         // Bem lenta (1 tiro a cada 2 segundos)
+                damage: 7,             // Muito dano
+                projectileSpeed: 350,   // Projétil mais pesado e lento
+                projectileType: 'spin'
             }
         ];
         items = [];
