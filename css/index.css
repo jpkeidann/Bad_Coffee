@@ -1,0 +1,40 @@
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           overflow: hidden;
+           background-color: #111;
+           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+       }
+
+       /* Interface simples por cima do canvas */
+       .ui-container {
+           position: absolute;
+           top: 20px;
+           left: 20px;
+           color: white;
+           z-index: 10;
+           pointer-events: none;
+           /* Permite clicar através do texto */
+       }
+
+       h1 {
+           font-size: 24px;
+           margin-bottom: 5px;
+           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+       }
+
+       p {
+           font-size: 14px;
+           opacity: 0.8;
+       }
+
+       canvas {
+           display: block;
+           position: absolute;
+           top: 0;
+           left: 0;
+       }
