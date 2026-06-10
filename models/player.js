@@ -1,12 +1,9 @@
-const Obj = require('./obj')
-
 class Player extends Obj{
     speed = 8
     dirX = 0
     dirY = 0
 
-    mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir) {
-
+    mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir){
         // normalizar diagonal
         let dx = this.dirX
         let dy = this.dirY
