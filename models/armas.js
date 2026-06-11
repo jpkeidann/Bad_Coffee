@@ -1,12 +1,9 @@
 // armas.js
 
 class GameSystem {
- 
+
     constructor() {
-        // --- ATRIBUTOS GLOBAIS (Modificados pelos itens passivos) ---
-        this.baseDamageMultiplier = 1.0; 
-        this.baseCooldownMultiplier = 1.0; // Novo: Multiplicador de tempo de recarga
-        this.baseSpeedMultiplier = 1.0;    // Novo: Multiplicador de velocidade da bala
+
 
         // --- NOVO: ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
         this.baseMaxHealth = 100;          // Modificado pela CASCA (+Vida Máxima)
@@ -18,7 +15,8 @@ class GameSystem {
         this.level = 1;
         this.currentXp = 0;
         this.xpNeeded = 100;
-                this.weapons = [
+
+        this.weapons = [
             {
                 id: 'p320',
                 name: 'Pistola P320',
@@ -30,8 +28,8 @@ class GameSystem {
                 damage: 15,           // Dano próprio da arma
                 projectileSpeed: 400, // Velocidade física da bala na tela
                 projectileType: 'bullet', // Tipo/Visual do projétil
-                shootBehavior: 'sequence',      
-                projectileCount: 1          
+                shootBehavior: 'sequence',
+                projectileCount: 1
             },
             {
                 id: 'mp5',
@@ -39,63 +37,63 @@ class GameSystem {
                 type: 'weapon',
                 level: 1,
                 maxLevel: 5,
-                cooldown: 700,                
-                damage: 5,           
-                projectileSpeed: 700, 
+                cooldown: 700,
+                damage: 5,
+                projectileSpeed: 700,
                 projectileType: 'bullet',
-                shootBehavior: 'sequence',      
+                shootBehavior: 'sequence',
                 projectileCount: 3          // Dispara 1 projéteis de uma vez só
             }, {
-                 id: 'ks_23',
+                id: 'ks_23',
                 name: 'Escopeta KS-23',
                 type: 'weapon',
                 maxLevel: 5,
-                cooldown: 1500,         
-                damage: 30,             
-                projectileSpeed: 250,   
+                cooldown: 1500,
+                damage: 30,
+                projectileSpeed: 250,
                 projectileType: 'pellet',
                 shootBehavior: 'cone',      // Atira várias balas espalhadas em formato de cone
                 projectileCount: 3          // Dispara 3 projéteis de uma vez só
-            },{
+            }, {
                 id: 'lightsaber',
                 name: 'sabre de luz',
                 type: 'weapon',
                 maxLevel: 5,
-                cooldown: 3000,         
-                damage: 40,            
-                projectileSpeed: 150,   
+                cooldown: 3000,
+                damage: 40,
+                projectileSpeed: 150,
                 projectileType: 'force',
-                shootBehavior: 'slash',      
-                projectileCount: 1  
-            },{
+                shootBehavior: 'slash',
+                projectileCount: 1
+            }, {
                 id: 'gjallahorn',
                 name: 'Gjallahorn',
                 type: 'weapon',
                 maxLevel: 5,
-                cooldown: 5000,        
-                damage: 60,             
-                projectileSpeed: 350,   
+                cooldown: 5000,
+                damage: 60,
+                projectileSpeed: 350,
                 projectileType: 'big_boom',
-                shootBehavior: 'sequence',      
-                projectileCount: 1  
-            },{
+                shootBehavior: 'sequence',
+                projectileCount: 1
+            }, {
                 id: 'dagger',
                 name: 'adaga',
                 type: 'weapon',
                 maxLevel: 5,
-                cooldown: 950,        
-                damage: 7,             
-                projectileSpeed: 350,   
+                cooldown: 950,
+                damage: 7,
+                projectileSpeed: 350,
                 projectileType: 'spin',
-                shootBehavior: 'orbit',      
-                projectileCount: 1 
+                shootBehavior: 'orbit',
+                projectileCount: 1
             }
         ];
         this.items = [];
 
         // Limites de inventário
         this.maxWeaponSlots = 3;
-        this.maxItemSlots = 2; 
+        this.maxItemSlots = 2;
     }
     // Gerencia o ganho de XP e avanço de nível
     gainXp(amount, globalPool) {
@@ -120,8 +118,8 @@ class GameSystem {
     generateChoices(globalPool) {
         const availableChoices = globalPool.filter(poolItem => {
             // Procura se o jogador já possui essa arma ou item
-            const alreadyHas = this.weapons.find(w => w.id === poolItem.id) || 
-                               this.items.find(i => i.id === poolItem.id);
+            const alreadyHas = this.weapons.find(w => w.id === poolItem.id) ||
+                this.items.find(i => i.id === poolItem.id);
 
             if (alreadyHas) {
                 // Se já tem, só oferece se não estiver no nível máximo
@@ -147,20 +145,16 @@ class GameSystem {
         let weaponsThatFired = [];
 
         this.weapons.forEach(weapon => {
-           weapon.timer += deltaTime;
+            weapon.timer += deltaTime;
 
-// NOVO: Aplica os itens passivos de tempo e velocidade
-            const finalDamage = weapon.damage * this.baseDamageMultiplier;
-            const finalCooldown = weapon.cooldown * this.baseCooldownMultiplier;
-            const finalSpeed = weapon.projectileSpeed * this.baseSpeedMultiplier;
 
             if (weapon.timer >= weapon.cooldown) {
-                weapon.timer = 0; 
+                weapon.timer = 0;
 
 
 
                 let targetEnemy = null;
-                if (['sequence', 'cone', 'slash', 'espetar', 'orbit'].includes(weapon.shootBehavior)) {
+                if (['sequence', 'cone', 'slash', 'orbit'].includes(weapon.shootBehavior)) {
                     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
                 }
 
@@ -184,7 +178,7 @@ class GameSystem {
 
         return weaponsThatFired;
     }
-    
+
     findClosestEnemy(playerPos, enemiesList) {
         if (!enemiesList || enemiesList.length === 0) return null;
 
@@ -206,47 +200,47 @@ class GameSystem {
     }
 
     // Aplica a escolha feita na interface
-applyChoice(chosenItem) {
+    applyChoice(chosenItem) {
         const inventory = chosenItem.type === 'weapon' ? this.weapons : this.items;
         const existing = inventory.find(i => i.id === chosenItem.id);
 
-// Se o item NÃO existe no inventário, cria ele no nível 1
+        // Se o item NÃO existe no inventário, cria ele no nível 1
         if (!existing) {
             existing = { ...chosenItem, level: 1, timer: 0 };
             inventory.push(existing);
-            
+
             if (chosenItem.type === 'passive') {
                 this.executePassiveBuff(chosenItem.id);
             }
-            return; 
+            return;
         }
 
-            existing.level++;
-            
-            // Exemplo de como cada arma pode evoluir de forma diferente ao subir de nível
-            if(chosenItem.type === 'weapon'){
+        existing.level++;
+
+        // Exemplo de como cada arma pode evoluir de forma diferente ao subir de nível
+        if (chosenItem.type === 'weapon') {
             if (existing.id === 'p320') {
                 existing.damage += 5;        // P320 ganha +5 de dano por nível
                 existing.cooldown -= 50;     // Atira um pouco mais rápido
             } else if (existing.id === 'ks_23') {
                 existing.damage += 12;       // Escopeta ganha muito mais dano
-            }else if (existing.id === 'mp5') {
+            } else if (existing.id === 'mp5') {
                 existing.damage += 1;
                 existing.cooldown -= 25;
-            }else if (existing.id === 'lightsaber') {
+            } else if (existing.id === 'lightsaber') {
                 existing.damage += 15;
                 existing.cooldown -= 75;
                 existing.projectileSpeed += 100;
-            }else if (existing.id === 'gjallahorn') {
+            } else if (existing.id === 'gjallahorn') {
                 existing.damage += 20;
                 existing.cooldown -= 125;
                 existing.projectileSpeed += 150;
-            }else if (existing.id === 'dagger') {
+            } else if (existing.id === 'dagger') {
                 existing.damage += 7;
                 existing.cooldown -= 60;
                 existing.projectileSpeed += 150;
             }
-        }else if (chosenItem.type === 'passive') {
+        } else if (chosenItem.type === 'passive') {
             this.executePassiveBuff(existing.id);
         }
     }
