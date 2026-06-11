@@ -11,7 +11,7 @@ class GameSystem {
         // --- NOVO: ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
         this.baseMaxHealth = 100;          // Modificado pela CASCA (+Vida Máxima)
         this.baseArmor = 0;                // Modificado pela ARMADURA (+Resistência)
-        this.baseRegen = 0;                // Modificado pelo LEITE (+Regeneração de Vida)
+        this.baseRegen = 5;                // Modificado pelo LEITE (+Regeneração de Vida)
         this.baseMoveSpeedMultiplier = 1.0; // Caso queira usar a SERINGA para andar mais rápido também!
 
         // CORREÇÃO: Adicionado o 'this.' em todas as variáveis abaixo
@@ -46,7 +46,7 @@ class GameSystem {
                 shootBehavior: 'sequence',      
                 projectileCount: 3          // Dispara 1 projéteis de uma vez só
             }, {
-                id: 'ks_23',
+                 id: 'ks_23',
                 name: 'Escopeta KS-23',
                 type: 'weapon',
                 maxLevel: 5,
