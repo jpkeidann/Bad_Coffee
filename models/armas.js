@@ -170,9 +170,10 @@ class GameSystem {
                     id: weapon.id,
                     projectileType: weapon.projectileType,
                     projectileSpeed: weapon.projectileSpeed,
-                    damage: finalDamage,
+                    damage: weapon.finalDamage,
                     target: targetEnemy
                 });
+                // damage talvez esteja errado
             }
         });
 
