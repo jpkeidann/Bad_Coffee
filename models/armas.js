@@ -1,142 +1,73 @@
-// armas.js
+const catalogoGlobal = [
+    // --- ARMAS ---
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3 },
+    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1 },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1 },
+    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1 },
+    
+    // --- ITENS (ACESSÓRIOS) ---
+    { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.' },
+    { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.' },
+    { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.' },
+    { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.' }
+];
 
 class GameSystem {
-
     constructor() {
+        // --- ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
+        this.baseMaxHealth = 100;          
+        this.baseArmor = 0;                
+        this.baseRegen = 1; // Alterado para 0              
+        this.baseMoveSpeedMultiplier = 1.0; 
+        
+        // --- NOVO: SISTEMA DE DANO CRÍTICO ---
+        this.critChance = 0.05;      // 5% de chance de dar crítico
+        this.critMultiplier = 1.5;   // Multiplicador de dano , Crítico dá 150% do dano
 
-
-        // --- NOVO: ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
-        this.baseMaxHealth = 100;          // Modificado pela CASCA (+Vida Máxima)
-        this.baseArmor = 0;                // Modificado pela ARMADURA (+Resistência)
-        this.baseRegen = 5;                // Modificado pelo LEITE (+Regeneração de Vida)
-        this.baseMoveSpeedMultiplier = 1.0; // Caso queira usar a SERINGA para andar mais rápido também!
-
-        // CORREÇÃO: Adicionado o 'this.' em todas as variáveis abaixo
+        // Sistema de Progressão
         this.level = 1;
         this.currentXp = 0;
         this.xpNeeded = 100;
 
-        this.weapons = [
-            {
-                id: 'p320',
-                name: 'Pistola P320',
-                type: 'weapon',
-                level: 1,
-                maxLevel: 5,
-                cooldown: 1000,       // 1 tiro por segundo (1000ms)
-                timer: 0,             // Cronômetro interno
-                damage: 15,           // Dano próprio da arma
-                projectileSpeed: 400, // Velocidade física da bala na tela
-                projectileType: 'bullet', // Tipo/Visual do projétil
-                shootBehavior: 'sequence',
-                projectileCount: 1
-            },
-            {
-                id: 'mp5',
-                name: 'Metralhadora  MP5',
-                type: 'weapon',
-                level: 1,
-                maxLevel: 5,
-                cooldown: 700,
-                damage: 5,
-                projectileSpeed: 700,
-                projectileType: 'bullet',
-                shootBehavior: 'sequence',
-                projectileCount: 3          // Dispara 1 projéteis de uma vez só
-            }, {
-                id: 'ks_23',
-                name: 'Escopeta KS-23',
-                type: 'weapon',
-                maxLevel: 5,
-                cooldown: 1500,
-                damage: 30,
-                projectileSpeed: 250,
-                projectileType: 'pellet',
-                shootBehavior: 'cone',      // Atira várias balas espalhadas em formato de cone
-                projectileCount: 3          // Dispara 3 projéteis de uma vez só
-            }, {
-                id: 'lightsaber',
-                name: 'sabre de luz',
-                type: 'weapon',
-                maxLevel: 5,
-                cooldown: 3000,
-                damage: 40,
-                projectileSpeed: 150,
-                projectileType: 'force',
-                shootBehavior: 'slash',
-                projectileCount: 1
-            }, {
-                id: 'gjallahorn',
-                name: 'Gjallahorn',
-                type: 'weapon',
-                maxLevel: 5,
-                cooldown: 5000,
-                damage: 60,
-                projectileSpeed: 350,
-                projectileType: 'big_boom',
-                shootBehavior: 'sequence',
-                projectileCount: 1
-            }, {
-                id: 'dagger',
-                name: 'adaga',
-                type: 'weapon',
-                maxLevel: 5,
-                cooldown: 950,
-                damage: 7,
-                projectileSpeed: 350,
-                projectileType: 'spin',
-                shootBehavior: 'orbit',
-                projectileCount: 1
-            }
-        ];
+        // O jogador começa com a P320
+        this.weapons = [ { ...catalogoGlobal.find(item => item.id === 'p320'), level: 1, timer: 0 } ];
         this.items = [];
 
         // Limites de inventário
         this.maxWeaponSlots = 3;
         this.maxItemSlots = 2;
     }
-    // Gerencia o ganho de XP e avanço de nível
-    gainXp(amount, globalPool) {
-        this.currentXp += amount;
 
-        // Se passar de 100%, upa de nível
+    gainXp(amount) {
+        this.currentXp += amount;
         if (this.currentXp >= this.xpNeeded) {
-            this.currentXp -= this.xpNeeded; // Mantém a sobra do XP
+            this.currentXp -= this.xpNeeded; 
             this.level++;
-            this.xpNeeded = this.level * 100; // O próximo nível vai precisar de mais XP
+            this.xpNeeded = this.level * 100; 
 
             return {
                 leveledUp: true,
-                choices: this.generateChoices(globalPool)
+                choices: this.generateChoices()
             };
         }
-
         return { leveledUp: false, choices: [] };
     }
 
-    // Gera as opções de escolha respeitando os limites de espaços do inventário
-    generateChoices(globalPool) {
-        const availableChoices = globalPool.filter(poolItem => {
-            // Procura se o jogador já possui essa arma ou item
-            const alreadyHas = this.weapons.find(w => w.id === poolItem.id) ||
-                this.items.find(i => i.id === poolItem.id);
+    generateChoices() {
+        const availableChoices = catalogoGlobal.filter(poolItem => {
+            const alreadyHas = this.weapons.find(w => w.id === poolItem.id) || this.items.find(i => i.id === poolItem.id);
 
             if (alreadyHas) {
-                // Se já tem, só oferece se não estiver no nível máximo
                 return alreadyHas.level < poolItem.maxLevel;
             } else {
-                // Se NÃO tem, verifica se ainda há espaço livre no inventário correspondente
-                if (poolItem.type === 'weapon' && this.weapons.length >= this.maxWeaponSlots) {
-                    return false; // Inventário de armas cheio! Não oferece armas novas.
-                }
-                if (poolItem.type === 'passive' && this.items.length >= this.maxItemSlots) {
-                    return false; // Inventário de itens cheio! Não oferece itens novos.
-                }
+                if (poolItem.type === 'weapon' && this.weapons.length >= this.maxWeaponSlots) return false;
+                if (poolItem.type === 'passive' && this.items.length >= this.maxItemSlots) return false;
                 return true;
             }
         });
 
-        // Embaralha todas as opções válidas e pega 3 delas
         const shuffled = [...availableChoices].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 3);
     }
@@ -147,33 +78,29 @@ class GameSystem {
         this.weapons.forEach(weapon => {
             weapon.timer += deltaTime;
 
-
             if (weapon.timer >= weapon.cooldown) {
                 weapon.timer = 0;
 
-
+                // --- NOVO: CÁLCULO DE CRÍTICO ---
+                let isCrit = Math.random() < this.critChance;
+                let finalDamage = weapon.damage;
+                if (isCrit) {
+                    finalDamage = Math.floor(finalDamage * this.critMultiplier);
+                }
 
                 let targetEnemy = null;
                 if (['sequence', 'cone', 'slash', 'orbit'].includes(weapon.shootBehavior)) {
                     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
                 }
 
-                // let targetEnemy = null;
-
-                // // Armas que precisam de mira (sequence e cone) buscam o alvo
-                // if (weapon.shootBehavior === 'sequence' || weapon.shootBehavior === 'cone' || weapon.shootBehavior === 'slash'  || weapon.shootBehavior === 'espetar' || weapon.shootBehavior === 'orbit') {
-                //     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
-                // }
-
-                // Enviamos para a engine um objeto pronto com tudo o que ela precisa para criar o tiro
                 weaponsThatFired.push({
                     id: weapon.id,
                     projectileType: weapon.projectileType,
                     projectileSpeed: weapon.projectileSpeed,
-                    damage: weapon.finalDamage,
+                    damage: finalDamage,
+                    isCritical: isCrit, // Sinaliza para o index.js desenhar o tiro de forma diferente se quiser
                     target: targetEnemy
                 });
-                // damage talvez esteja errado
             }
         });
 
@@ -200,15 +127,13 @@ class GameSystem {
         return closestEnemy;
     }
 
-    // Aplica a escolha feita na interface
     applyChoice(chosenItem) {
         const inventory = chosenItem.type === 'weapon' ? this.weapons : this.items;
         const existing = inventory.find(i => i.id === chosenItem.id);
 
-        // Se o item NÃO existe no inventário, cria ele no nível 1
         if (!existing) {
-            existing = { ...chosenItem, level: 1, timer: 0 };
-            inventory.push(existing);
+            const newItem = { ...chosenItem, level: 1, timer: 0 };
+            inventory.push(newItem);
 
             if (chosenItem.type === 'passive') {
                 this.executePassiveBuff(chosenItem.id);
@@ -218,13 +143,12 @@ class GameSystem {
 
         existing.level++;
 
-        // Exemplo de como cada arma pode evoluir de forma diferente ao subir de nível
         if (chosenItem.type === 'weapon') {
             if (existing.id === 'p320') {
-                existing.damage += 5;        // P320 ganha +5 de dano por nível
-                existing.cooldown -= 50;     // Atira um pouco mais rápido
+                existing.damage += 5;        
+                existing.cooldown -= 50;     
             } else if (existing.id === 'ks_23') {
-                existing.damage += 12;       // Escopeta ganha muito mais dano
+                existing.damage += 12;       
             } else if (existing.id === 'mp5') {
                 existing.damage += 1;
                 existing.cooldown -= 25;
@@ -246,16 +170,21 @@ class GameSystem {
         }
     }
 
-    // --- SEUS NOVOS ITENS TEMÁTICOS DE CAFÉ ---
     executePassiveBuff(id) {
         if (id === 'seringa') {
-            this.baseMoveSpeedMultiplier += 0.05;   // Opcional: Dá +5% de velocidade de movimento ao boneco
+            this.baseMoveSpeedMultiplier += 0.05;   
         } else if (id === 'armadura') {
-            this.baseArmor += 4;                    // +4 de Armadura (reduz dano fixo recebido)
+            this.baseArmor += 4;                    
         } else if (id === 'leite') {
-            this.baseRegen += 1;                    // +1 de vida recuperada por segundo
+            this.baseRegen += 1;                    
         } else if (id === 'casca') {
-            this.baseMaxHealth += 25;               // Aumenta a vida máxima do café em +25 pontos
+            this.baseMaxHealth += 25;               
         }
     }
+}
+
+// Quando for rodar no navegador usando tag <script>, não precisamos do module.exports. 
+// Mas se o João precisar puxar isso no Node ou Bundler:
+if (typeof module !== 'undefined') {
+    module.exports = { GameSystem, catalogoGlobal };
 }
