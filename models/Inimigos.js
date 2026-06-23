@@ -1,9 +1,11 @@
-class Inimigo {
+
+class Inimigo extends Obj {
     // 1. O CONSTRUTOR (Nascimento do Inimigo)
-    constructor(x, y, configuracao, jogo) {
-        this.x = x; 
-        this.y = y; 
-        this.jogo = jogo; // Guarda a referência do jogo principal
+    // NOVO: Adicionado w (largura), h (altura) e imgCaminho
+    constructor(x, y, w, h, imgCaminho, configuracao, jogo) {
+        super(x, y, w, h, imgCaminho); // Envia os dados visuais para a classe Obj
+        
+        this.jogo = jogo; 
 
         // Configurações básicas 
         this.nome = configuracao.nome || "Praga Comum";
@@ -12,17 +14,24 @@ class Inimigo {
         this.danoContato = configuracao.dano || 1;
         this.xpRecompensa = configuracao.xp || 5;
 
-        // SISTEMA COOP: Aumenta a vida se tiver 2 jogadores
         if (this.jogo.temDoisJogadores) {
             this.vidaMaxima = Math.round(this.vidaMaxima * 1.7);
         }
         
         this.vidaAtual = this.vidaMaxima;
-        this.alvo = null; // Começa sem nenhum alvo travado
+        this.alvo = null; 
     }
 
+    desenhar(contexto) {
+        // Garante que a imagem foi carregada antes de tentar desenhar na tela
+        if (this.img.complete) {
+            contexto.drawImage(this.img, this.x, this.y, this.w, this.h);
+        }
+    }
+
+
     // 2. O LOOP PRINCIPAL (Roda a cada frame do jogo)
-    atualizar() {
+    atualizarI() {
         // Encontra quem está mais perto
         this.definirAlvoMaisProximo();
 
@@ -112,4 +121,5 @@ class Inimigo {
         // Avisa o jogo para apagar esse inimigo da memória
         this.jogo.removerInimigo(this);
     }
+    
 }
