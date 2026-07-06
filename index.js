@@ -23,33 +23,102 @@ let player = new Player(200, 200, 128, 128, "../img/killer_bean.png")
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
 
 // --- ARRAYS DE CONTROLE ---
-let tirosNaTela = []
+// --- Abel --- 
+function controlarTiros(deltaTime) {
+    // 1. Pega os tiros passando a array correta de inimigos da Wave
+    let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, player, inimigos);
 
-// ==================== Movimento jogador =======================
-const keys = {}
+    let centroPx = player.x + player.w / 2;
+    let centroPy = player.y + player.h / 2;
 
-let jogar = true
-let fase = 1
+    // 2. Criação do projétil baseada no comportamento
+    disparosFeitos.forEach(tiro => {
+        if (tiro.target) {
+            let dx = tiro.target.x - centroPx;
+            let dy = tiro.target.y - centroPy;
+            let anguloAlvo = Math.atan2(dy, dx); 
 
-let velocidadeCar = 1
+            // COMPORTAMENTO 1: Tiro Reto (Pistola, MP5, Lança, Gjallahorn)
+            if (tiro.shootBehavior === 'sequence') {
+                tirosNaTela.push({
+                    x: centroPx, y: centroPy,
+                    vx: Math.cos(anguloAlvo) * tiro.projectileSpeed,
+                    vy: Math.sin(anguloAlvo) * tiro.projectileSpeed,
+                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
+                    tempoVida: 2000 
+                });
+            } 
+            // COMPORTAMENTO 2: Cone / Espingarda (KS-23)
+            else if (tiro.shootBehavior === 'cone') {
+                for(let i = -1; i <= 1; i++) {
+                    let spread = anguloAlvo + (i * 0.2); 
+                    tirosNaTela.push({
+                        x: centroPx, y: centroPy,
+                        vx: Math.cos(spread) * tiro.projectileSpeed,
+                        vy: Math.sin(spread) * tiro.projectileSpeed,
+                        type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
+                        tempoVida: 800 
+                    });
+                }
+            }
+            // COMPORTAMENTO 3: Corte / Sabre de Luz
+            else if (tiro.shootBehavior === 'slash') {
+                 tirosNaTela.push({
+                    x: centroPx + Math.cos(anguloAlvo) * 60, 
+                    y: centroPy + Math.sin(anguloAlvo) * 60,
+                    vx: 0, vy: 0, 
+                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
+                    tempoVida: 200 
+                });
+            }
+            // COMPORTAMENTO 4: Órbita / Adaga
+            else if (tiro.shootBehavior === 'orbit') {
+                 tirosNaTela.push({
+                    x: centroPx, y: centroPy,
+                    vx: 0, vy: 0, anguloOrbita: 0, orbitando: true,
+                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
+                    tempoVida: 3000 
+                });
+            }
+        }
+    });
 
-document.addEventListener('keydown', (e) => {
-    keys[e.key] = true
-})
+    // 3. Move os tiros
+    tirosNaTela.forEach(tiro => {
+        if (tiro.orbitando) {
+            tiro.anguloOrbita += 0.1;
+            tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * 80; 
+            tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * 80;
+        } else {
+            tiro.x += tiro.vx * (deltaTime / 1000);
+            tiro.y += tiro.vy * (deltaTime / 1000);
+        }
+        tiro.tempoVida -= deltaTime;
+    });
 
-document.addEventListener('keyup', (e) => {
-    keys[e.key] = false
-})
-
-function controlarPlayers() {
-    player.dirX = 0
-    player.dirY = 0
-
-    if (keys['w']) player.dirY = -1
-    if (keys['s']) player.dirY = 1
-    if (keys['a']) player.dirX = -1
-    if (keys['d']) player.dirX = 1
+    // 4. Limpa tiros mortos
+    tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
 }
+
+// Função só para desenhar os tiros (Organização visual)
+function desenharTiros() {
+    tirosNaTela.forEach(tiro => {
+        des.beginPath();
+        
+        if (tiro.isCritical) des.fillStyle = "purple"; 
+        else if (tiro.type === 'bullet') des.fillStyle = "yellow";
+        else if (tiro.type === 'pellet') des.fillStyle = "orange";
+        else if (tiro.type === 'force') des.fillStyle = "cyan"; 
+        else if (tiro.type === 'spin') des.fillStyle = "gray";  
+        else des.fillStyle = "white";
+
+        des.arc(tiro.x, tiro.y, 6, 0, Math.PI * 2);
+        des.fill();
+    });
+}
+
+
+
 
 // ============================ INIMIGOS ===============================
 // -------------- CONFIGURAÇÃO DO SISTEMA DE WAVES ----------------
@@ -142,15 +211,7 @@ function spawnarInimigo() {
 function desenha() {
     player.des_player()
 
-    tirosNaTela.forEach(tiro => {
-        if (tiro.type === 'bullet') des.fillStyle = "gold";
-        else if (tiro.type === 'pellet') des.fillStyle = "silver";
-        else des.fillStyle = "cyan"; // Outros tipos como sabre/adaga
-
-        des.beginPath();
-        des.arc(tiro.x, tiro.y, 6, 0, Math.PI * 2);
-        des.fill();
-    });
+desenharTiros();
 }
 
 function atualiza(deltaTime) {
@@ -162,42 +223,9 @@ function atualiza(deltaTime) {
     player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir)
     controlarPlayers()
 
-    // 2. Processa o temporizador das armas (passando o deltaTime em milissegundos)
-    let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, player, listaDeInimigos);
-
-    // 3. Se alguma arma disparou, criamos o projétil físico no index.js
-    disparosFeitos.forEach(tiro => {
-        if (tiro.target) {
-            // Calcula a direção exata do canhão do jogador até o inimigo alvo
-            let dx = tiro.target.x - (player.x + player.w / 2);
-            let dy = tiro.target.y - (player.h / 2 + player.y);
-            let distancia = Math.sqrt(dx * dx + dy * dy);
-
-            if (distancia > 0) {
-                tirosNaTela.push({
-                    x: player.x + player.w / 2, // Sai do meio do jogador
-                    y: player.y + player.h / 2,
-                    vx: (dx / distancia) * tiro.projectileSpeed, // Velocidade X proporcional
-                    vy: (dy / distancia) * tiro.projectileSpeed, // Velocidade Y proporcional
-                    type: tiro.projectileType,
-                    damage: tiro.damage
-                });
-            }
-        }
-    });
-    // =================== ATENÇÃO =======>  João: muita geometria complexa, depois eu irei ver melhor sobre isso;
-
-    // 4. Move os tiros que já estão voando pelo mapa
-    tirosNaTela.forEach(tiro => {
-        tiro.x += tiro.vx * (deltaTime / 1000);
-        tiro.y += tiro.vy * (deltaTime / 1000);
-    });
-
-    // 5. Limpa os tiros que saíram da tela para não travar o computador
-    tirosNaTela = tirosNaTela.filter(tiro =>
-        tiro.x >= 0 && tiro.x <= canvas.width &&
-        tiro.y >= 0 && tiro.y <= canvas.height
-    );
+       // A sua lógica de matemática isolada roda aqui:
+    controlarTiros(deltaTime); 
+    
 }
 
 let ultimoTempo = 0
