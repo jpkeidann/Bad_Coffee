@@ -25,6 +25,21 @@ let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
 // ============= PLAYER =============
 // -joão
 
+const keys = {}
+
+let jogar = true
+let fase = 1
+
+let velocidadeCar = 1
+
+document.addEventListener('keydown', (e) => {
+    keys[e.key] = true
+})
+
+document.addEventListener('keyup', (e) => {
+    keys[e.key] = false
+})
+
 function controlarPlayers() {
 
     // PLAYER 1
