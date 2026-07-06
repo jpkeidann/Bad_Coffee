@@ -22,6 +22,30 @@ des.mozImageSmoothingEnabled = false;
 let player = new Player(200, 200, 128, 128, "../img/killer_bean.png")
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
 
+// ============= PLAYER =============
+// -joão
+
+function controlarPlayers() {
+
+    // PLAYER 1
+    player.dirX = 0
+    player.dirY = 0
+
+    if (keys['w']) player.dirY = -1
+    if (keys['s']) player.dirY = 1
+    if (keys['a']) player.dirX = -1
+    if (keys['d']) player.dirX = 1
+
+    // PLAYER 2
+    player2.dirX = 0
+    player2.dirY = 0
+
+    if (keys['ArrowUp']) player2.dirY = -1
+    if (keys['ArrowDown']) player2.dirY = 1
+    if (keys['ArrowLeft']) player2.dirX = -1
+    if (keys['ArrowRight']) player2.dirX = 1
+}
+
 // --- ARRAYS DE CONTROLE ---
 // --- Abel --- 
 function controlarTiros(deltaTime) {
