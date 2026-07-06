@@ -87,7 +87,7 @@ class Inimigo extends Obj {
         }
 
         // Define quem o inimigo vai caçar neste frame
-        this.alvo = jogadorMaisPerto;
+        this.alvo = jogadorMaisPerto;  
     }
 
     // 4. SISTEMA DE COMBATE (Tomar Dano)
