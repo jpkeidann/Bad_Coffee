@@ -1,4 +1,3 @@
-
 class Inimigo extends Obj {
     // 1. O CONSTRUTOR (Nascimento do Inimigo)
     // NOVO: Adicionado w (largura), h (altura) e imgCaminho
@@ -88,7 +87,7 @@ class Inimigo extends Obj {
         }
 
         // Define quem o inimigo vai caçar neste frame
-        this.alvo = jogadorMaisPerto;
+        this.alvo = jogadorMaisPerto;  
     }
 
     // 4. SISTEMA DE COMBATE (Tomar Dano)
