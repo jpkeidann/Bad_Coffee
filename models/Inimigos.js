@@ -1,8 +1,6 @@
-class Inimigo extends Obj {
-    // 1. O CONSTRUTOR (Nascimento do Inimigo)
-    // NOVO: Adicionado w (largura), h (altura) e imgCaminho
+class Inimigo {
     constructor(x, y, w, h, imgCaminho, configuracao, jogo) {
-        super(x, y, w, h, imgCaminho); // Envia os dados visuais para a classe Obj
+      
         
         this.jogo = jogo; 
 
@@ -119,6 +117,17 @@ class Inimigo extends Obj {
         
         // Avisa o jogo para apagar esse inimigo da memória
         this.jogo.removerInimigo(this);
+    }
+    
+    desenhar(contexto) {
+        // Se a imagem carregou e não está quebrada, desenha ela
+        if (this.img.complete && this.img.naturalWidth !== 0) {
+            contexto.drawImage(this.img, this.x, this.y, this.w, this.h);
+        } else {
+            // MODO DEBUG: Se a imagem falhar, desenha um quadrado vermelho para você ver que ele existe!
+            contexto.fillStyle = "red";
+            contexto.fillRect(this.x, this.y, this.w, this.h);
+        }
     }
     
 }
