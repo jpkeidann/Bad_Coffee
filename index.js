@@ -218,7 +218,6 @@ function spawnarInimigo() {
         spawnX = Math.random() < 0.5 ? -50 : canvas.width + 50;
         spawnY = Math.random() * canvas.height;
     }
-    //muita geometria complexa dps vejo - jonas
 
     let configInimigo = { 
         nome: "Praga do Café", 
@@ -250,6 +249,7 @@ function spawnarInimigo() {
 
 function desenha() {
     player.des_player();
+    player.desenharBarraVida(des); // <--- ADICIONADO AQUI PARA DESENHAR A BARRA DE VIDA!
     desenharTiros();
 
     // Desenha todos os inimigos vivos na tela ---
@@ -304,11 +304,9 @@ function main(tempoAtual) {
 
     requestAnimationFrame(main)
 }
-// Inicializa o primeiro frame passando o tempo zero de partida
-requestAnimationFrame((tempo) => main(tempo));
 
 // Inicia a primeira rodada de inimigos!
 iniciarWave();
 
-// Inicializa o primeiro frame passando o tempo zero de partida
+// Inicializa o primeiro frame passando o tempo de partida
 requestAnimationFrame((tempo) => main(tempo));
