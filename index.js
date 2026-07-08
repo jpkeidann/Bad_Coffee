@@ -129,7 +129,7 @@ let inimigosVivos = 0;       // Quantos inimigos restam na tela
 let frameTimer = 0;          // Temporizador para controlar o ritmo de nascimento
 let descansoAtivo = false;   // Controla os segundos de paz entre as waves
 
-// Este objeto resolve os pedidos que a classe Inimigo faz (como checar jogadores e dar XP)
+// Este objeto resolve os pedidos que a classe Inimigo faz 
 const contextoDoJogo = {
     jogadores: [player],
     temDoisJogadores: false,
@@ -188,9 +188,9 @@ function spawnarInimigo() {
         xp: 5 
     };
 
-    let larguraInimigo = 0; 
-    let alturaInimigo = 0;  
-    let imagemInimigo = ""; 
+    let larguraInimigo = 40; 
+    let alturaInimigo = 40;  
+    let imagemInimigo = "";  // Deixe vazio por enquanto para ver o quadrado vermelho 
 
     let novoInimigo = new Inimigo(
         spawnX, 
@@ -209,25 +209,43 @@ function spawnarInimigo() {
 // ============================ MAIN ===================================
 
 function desenha() {
-    player.des_player()
+    player.des_player();
+    desenharTiros();
 
-desenharTiros();
+    // Desenha todos os inimigos vivos na tela ---
+    inimigos.forEach(inimigo => {
+        inimigo.desenhar(des);
+    });
 }
 
 function atualiza(deltaTime) {
-    let limiteCima = 0
-    let limiteBaixo = canvas.height
-    let limiteEsq = 0
-    let limiteDir = canvas.width
+    let limiteCima = 0;
+    let limiteBaixo = canvas.height;
+    let limiteEsq = 0;
+    let limiteDir = canvas.width;
 
-    player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir)
-    controlarPlayers()
+    player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
+    // controlarPlayers() // Nota: Se essa função não existir no seu código, comente-a para não dar erro!
 
-       // A sua lógica de matemática isolada roda aqui:
     controlarTiros(deltaTime); 
     
-}
+    //davi
+    // Atualiza a inteligência e movimento dos inimigos 
+    inimigos.forEach(inimigo => {
+        inimigo.atualizarI();
+    });
 
+    // Controlador de Ritmo de Spawn ---
+    if (!descansoAtivo && inimigosParaSpawnar > 0) {
+        frameTimer += deltaTime;
+        // Spawna 1 inimigo a cada 500 milissegundos (meio segundo)
+        if (frameTimer >= 500) {
+            spawnarInimigo();
+            inimigosParaSpawnar--;
+            frameTimer = 0;
+        }
+    }
+}
 let ultimoTempo = 0
 
 function main(tempoAtual) {
@@ -246,5 +264,11 @@ function main(tempoAtual) {
 
     requestAnimationFrame(main)
 }
+// Inicializa o primeiro frame passando o tempo zero de partida
+requestAnimationFrame((tempo) => main(tempo));
+
+// Inicia a primeira rodada de inimigos!
+iniciarWave();
+
 // Inicializa o primeiro frame passando o tempo zero de partida
 requestAnimationFrame((tempo) => main(tempo));
