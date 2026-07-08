@@ -51,14 +51,14 @@ function controlarPlayers() {
     if (keys['a']) player.dirX = -1
     if (keys['d']) player.dirX = 1
 
-    // PLAYER 2
-    player2.dirX = 0
-    player2.dirY = 0
+    // // PLAYER 2
+    // player2.dirX = 0
+    // player2.dirY = 0
 
-    if (keys['ArrowUp']) player2.dirY = -1
-    if (keys['ArrowDown']) player2.dirY = 1
-    if (keys['ArrowLeft']) player2.dirX = -1
-    if (keys['ArrowRight']) player2.dirX = 1
+    // if (keys['ArrowUp']) player2.dirY = -1
+    // if (keys['ArrowDown']) player2.dirY = 1
+    // if (keys['ArrowLeft']) player2.dirX = -1
+    // if (keys['ArrowRight']) player2.dirX = 1
 }
 
 // --- ARRAYS DE CONTROLE ---
