@@ -63,6 +63,7 @@ function controlarPlayers() {
 
 // --- ARRAYS DE CONTROLE ---
 // --- Abel --- 
+let tirosNaTela = []
 function controlarTiros(deltaTime) {
     // 1. Pega os tiros passando a array correta de inimigos da Wave
     let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, player, inimigos);
