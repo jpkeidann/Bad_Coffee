@@ -265,7 +265,7 @@ function atualiza(deltaTime) {
     let limiteDir = canvas.width;
 
     player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
-    // controlarPlayers() // Nota: Se essa função não existir no seu código, comente-a para não dar erro!
+    controlarPlayers()
 
     controlarTiros(deltaTime); 
     
