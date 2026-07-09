@@ -1,23 +1,17 @@
-// =========================================================================
-// CLASSE PLAYER - Responsabilidade: João (Suporte a Itens por Abel)
-// =========================================================================
 class Player extends Obj {
     constructor(x, y, w, h, imagemCaminho) {
         // Envia os dados para a classe pai (Obj) carregar a imagem e posições base
         super(x, y, w, h, imagemCaminho); 
         
-        // --- 🏃‍♂️ MOVIMENTAÇÃO (João) ---
         this.speed = 6;          // Velocidade base (Será aumentada pelo item SERINGA)
         this.dirX = 0;
         this.dirY = 0;
 
-        // --- 🩸 ATRIBUTOS DE VIDA E ITENS (João & Abel) ---
         this.vidaMaxima = 100;   // Vida máxima base (Será aumentada pelo item CASCA)
         this.vidaAtual = 100;
         this.regen = 0;          // Regeneração de vida por segundo (Ativada pelo item LEITE)
         this.armadura = 0;       // Redução de dano fixo recebido (Ativada pelo item ARMADURA)
 
-        // --- 📐 HITBOX AJUSTADA ---
         // Cria uma caixa de colisão menor que o sprite para ficar justo contra os inimigos do Davi
         this.hitbox = {
             x: 25, 
@@ -27,7 +21,7 @@ class Player extends Obj {
         };
     }
 
-    // --- 🎮 DESENHO DO PERSONAGEM ---
+    // --- DESENHO DO PERSONAGEM ---
     des_player() {
         // Verifica se a imagem herdada de Obj já foi carregada
         if (this.img && this.img.complete) {
@@ -38,7 +32,7 @@ class Player extends Obj {
             des.fillRect(this.x, this.y, this.w, this.h);
         }
 
-        // 🛠️ DICA DE TESTE: Descomente as linhas abaixo se quiserem enxergar a Hitbox vermelha piscando
+        //Descomente as linhas abaixo se quiserem enxergar a Hitbox vermelha piscando
         /*
         des.strokeStyle = "red";
         des.lineWidth = 2;
@@ -46,7 +40,6 @@ class Player extends Obj {
         */
     }
 
-    // --- 🕹️ MOVIMENTAÇÃO DIAGONAL REPARADA ---
     mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir) {
         let dx = this.dirX;
         let dy = this.dirY;
@@ -62,14 +55,12 @@ class Player extends Obj {
         this.x += dx * this.speed;
         this.y += dy * this.speed;
 
-        // --- 🛑 BARREIRAS DE LIMITE DA TELA ---
         if (this.y < limiteCima) this.y = limiteCima;
         if (this.y > limiteBaixo - this.h) this.y = limiteBaixo - this.h;
         if (this.x < limiteEsq) this.x = limiteEsq;
         if (this.x > limiteDir - this.w) this.x = limiteDir - this.w;
     }
 
-    // --- ⏱️ ATUALIZAÇÃO REGEN (LEITE) ---
     // Adicione esta chamada dentro da função atualiza() do seu index.js
     atualizarMecanicas(deltaTime) {
         if (this.vidaAtual > 0 && this.vidaAtual < this.vidaMaxima) {
@@ -83,7 +74,6 @@ class Player extends Obj {
         }
     }
 
-    // --- 🛡️ SISTEMA DE DANOS (ARMADURA) ---
     receberDano(quantidade) {
         // Reduz o dano baseado na armadura comprada, mas garante que leve pelo menos 1 de dano
         let danoFinal = quantidade - this.armadura;
@@ -93,7 +83,6 @@ class Player extends Obj {
         if (this.vidaAtual < 0) this.vidaAtual = 0; // Evita bugs de vida negativa
     }
 
-    // --- 💥 DETECTOR DE COLISÕES CONTRA PRAGAS ---
     colid(objeto) {
         let meuX = this.x + this.hitbox.x;
         let meuY = this.y + this.hitbox.y;
@@ -110,7 +99,6 @@ class Player extends Obj {
                 meuY + this.hitbox.h > objY);
     }
 
-    // --- 🟩 BARRA DE VIDA FLUTUANTE (Estilo Vampire Survivors) ---
     desenharBarraVida(contexto) {
         if (this.vidaAtual <= 0) return; // Se morreu, oculta a barra
 

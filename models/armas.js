@@ -1,27 +1,27 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3 },
-    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1 },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1 },
-    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png" },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png" },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png" },
+    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1, imgSrc: "../img/armas/Lightsaber.png" },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png" },
+    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/dagger.png" },
     
     // --- ITENS (ACESSÓRIOS) ---
-    { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.' },
-    { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.' },
-    { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.' },
-    { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.' }
+    { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../img/itens/seringa.png" },
+    { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.', imgSrc: "../img/itens/armadura.png" },
+    { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.', imgSrc: "../img/itens/leite.png" },
+    { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.', imgSrc: "../img/itens/casca.png" }
 ];
 
 class GameSystem {
     constructor() {
         // --- ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
-        this.baseMaxHealth = 100;          
-        this.baseArmor = 0;                
+        this.baseMaxHealth = 100;
+        this.baseArmor = 0;
         this.baseRegen = 1; // Alterado para 0              
-        this.baseMoveSpeedMultiplier = 1.0; 
-        
+        this.baseMoveSpeedMultiplier = 1.0;
+
         // --- NOVO: SISTEMA DE DANO CRÍTICO ---
         this.critChance = 0.05;      // 5% de chance de dar crítico
         this.critMultiplier = 1.5;   // Multiplicador de dano , Crítico dá 150% do dano
@@ -29,10 +29,10 @@ class GameSystem {
         // Sistema de Progressão
         this.level = 1;
         this.currentXp = 0;
-        this.xpNeeded = 100;
+        this.xpNeeded = 20;
 
         // O jogador começa com a P320
-        this.weapons = [ { ...catalogoGlobal.find(item => item.id === 'p320'), level: 1, timer: 0 } ];
+        this.weapons = [{ ...catalogoGlobal.find(item => item.id === 'p320'), level: 1, timer: 0 }];
         this.items = [];
 
         // Limites de inventário
@@ -42,11 +42,19 @@ class GameSystem {
 
     gainXp(amount) {
         this.currentXp += amount;
-        if (this.currentXp >= this.xpNeeded) {
-            this.currentXp -= this.xpNeeded; 
-            this.level++;
-            this.xpNeeded = this.level * 100; 
 
+        // Usamos "while" em vez de "if" para o caso de o jogador ganhar muito XP de uma vez só
+        if (this.currentXp >= this.xpNeeded) {
+            this.currentXp -= this.xpNeeded;
+            this.level++;
+
+            // MATEMÁTICA PROGRESSIVA (Estilo Vampire Survivors):
+            // Nível 1 precisa de 20 XP. Nível 2 precisará de 50 XP. Nível 3 precisará de 65 XP...
+            this.xpNeeded = Math.floor(20 + (this.level * 15));
+
+            console.log(`Subiu para o Nível ${this.level}! Próxima meta: ${this.xpNeeded} XP`);
+
+            // Mantém o retorno original para abrir o menu de escolhas do Abel
             return {
                 leveledUp: true,
                 choices: this.generateChoices()
@@ -145,10 +153,10 @@ class GameSystem {
 
         if (chosenItem.type === 'weapon') {
             if (existing.id === 'p320') {
-                existing.damage += 5;        
-                existing.cooldown -= 50;     
+                existing.damage += 5;
+                existing.cooldown -= 50;
             } else if (existing.id === 'ks_23') {
-                existing.damage += 12;       
+                existing.damage += 12;
             } else if (existing.id === 'mp5') {
                 existing.damage += 1;
                 existing.cooldown -= 25;
@@ -172,13 +180,13 @@ class GameSystem {
 
     executePassiveBuff(id) {
         if (id === 'seringa') {
-            this.baseMoveSpeedMultiplier += 0.05;   
+            this.baseMoveSpeedMultiplier += 0.05;
         } else if (id === 'armadura') {
-            this.baseArmor += 4;                    
+            this.baseArmor += 4;
         } else if (id === 'leite') {
-            this.baseRegen += 1;                    
+            this.baseRegen += 1;
         } else if (id === 'casca') {
-            this.baseMaxHealth += 25;               
+            this.baseMaxHealth += 25;
         }
     }
 }

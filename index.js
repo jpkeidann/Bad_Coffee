@@ -19,8 +19,16 @@ des.imageSmoothingEnabled = false;
 des.webkitImageSmoothingEnabled = false;
 des.mozImageSmoothingEnabled = false;
 
-let player = new Player(200, 200, 128, 128, "../img/killer_bean.png")
+
+let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
+
+// Substitua o caminho abaixo pelo local correto onde guardou a imagem da barra vazia
+const imgBarraXPVazia = new Image();
+imgBarraXPVazia.src = '../Img/2xp_bar_img.png'
+
+const imgBarraInventario = new Image();
+imgBarraInventario.src = "../img/barra_item.png"; // Certifica-te de que o nome do ficheiro está correto na tua pasta
 
 // ============= PLAYER =============
 // -joão
@@ -174,10 +182,12 @@ const contextoDoJogo = {
     jogadores: [player],
     temDoisJogadores: false,
     barraXP: { 
-        adicionarXP: (qtd) => { console.log(`Ganhou +${qtd} XP!`); } 
+        adicionarXP: (qtd) => { 
+            // Agora conecta o XP dropado pelo inimigo direto no sistema do Abel!
+            sistemaArmas.adicionarXP(qtd); 
+        } 
     },
     removerInimigo: function(inimigoMorto) {
-        // Remove o inimigo específico da lista
         inimigos = inimigos.filter(ini => ini !== inimigoMorto);
         inimigosVivos--;
         verificarFimDaWave();
@@ -244,6 +254,136 @@ function spawnarInimigo() {
     inimigos.push(novoInimigo);
 }
 
+function desenharInventarioVisual() {
+    // Dimensões ideais para a barra manter a proporção pixel-art sem esticar muito
+    let largBarra = 320; 
+    let altBarra = 64;
+    
+    // Centraliza horizontalmente na tela e coloca um pouco abaixo da barra de XP
+    let posX = (canvas.width - largBarra) / 2;
+    let posY = canvas.height - 75; 
+
+    // 1. Desenha o fundo do inventário (A imagem barra_item.png)
+    if (imgBarraInventario.complete) {
+        des.drawImage(imgBarraInventario, posX, posY, largBarra, altBarra);
+    }
+
+    // Configuração do texto para os nomes/níveis dos itens nos slots
+    des.fillStyle = "#ffffff";
+    des.font = "bold 10px Arial";
+    des.textAlign = "center";
+
+    // 2. RENDEREZAR ARMAS (Máximo 3 slots - Lado Esquerdo)
+    // O tamanho estimado de cada quadrado na proporção da barra é ~54px de largura
+    let tamanhoIcone = 64;
+    let espacamentoSlot = 53; 
+    let margemEsquerdaArmas = posX + 8; // Ajuste fino para alinhar dentro do primeiro quadrado
+
+    for (let i = 0; i < sistemaArmas.maxWeaponSlots; i++) {
+        let slotX = margemEsquerdaArmas + (i * espacamentoSlot);
+        let slotY = posY + 35; // Posição vertical do texto dentro do slot
+
+        // Se o jogador já possuir uma arma nesse slot, desenha a informação
+        if (sistemaArmas.weapons[i]) {
+            let arma = sistemaArmas.weapons[i];
+            
+
+            // Criamos ou reaproveitamos um objeto Image para a arma
+            if (!arma.imgObjeto) {
+                arma.imgObjeto = new Image();
+                arma.imgObjeto.src = arma.imgSrc;
+            }
+            // Se a imagem da arma já carregou, desenha o Sprite centralizado no slot
+            if (arma.imgObjeto.complete && arma.imgObjeto.naturalWidth !== 0) {
+                des.drawImage(arma.imgObjeto, slotX + 4, posY + 8, tamanhoIcone, tamanhoIcone);
+            } else {
+                // Fallback caso a imagem falhe: Mostra as primeiras letras
+                des.fillStyle = "#f1c40f";
+                des.fillText(arma.id.substring(0, 3).toUpperCase(), slotX + 20, posY + 28);
+            }
+
+            // Desenha o número do nível no canto inferior do slot
+            des.fillStyle = "#ffffff";
+            des.fillText(`Lvl ${arma.level}`, slotX + 20, posY + 52);
+        }
+    }
+
+    // 3. RENDERIZAR IMAGENS DOS ITENS PASSIVOS (Lado Direito)
+    let margemEsquerdaItens = posX + 202; 
+
+    for (let i = 0; i < sistemaArmas.maxItemSlots; i++) {
+        let slotX = margemEsquerdaItens + (i * espacamentoSlot);
+
+        if (sistemaArmas.items[i]) {
+            let item = sistemaArmas.items[i];
+
+            if (!item.imgObjeto) {
+                item.imgObjeto = new Image();
+                item.imgObjeto.src = item.imgSrc;
+            }
+
+            // Desenha o Sprite do item passivo
+            if (item.imgObjeto.complete && item.imgObjeto.naturalWidth !== 0) {
+                des.drawImage(item.imgObjeto, slotX + 4, posY + 8, tamanhoIcone, tamanhoIcone);
+            } else {
+                des.fillStyle = "#2ecc71";
+                des.fillText(item.id.substring(0, 3).toUpperCase(), slotX + 20, posY + 28);
+            }
+
+            // Desenha o nível do item passivo
+            des.fillStyle = "#ffffff";
+            des.fillText(`Lvl ${item.level}`, slotX + 20, posY + 52);
+        }
+    }
+
+    des.textAlign = "left"; // Reseta o alinhamento
+}
+function desenharBarraXP() {
+    let alturaBarra = 96; // Ajuste a altura para ficar proporcional à sua imagem
+    let larguraTotal = 768;
+
+    // 1. Desenha a sua imagem de barra vazia como plano de fundo (ocupa o topo de ponta a ponta)
+    if (imgBarraXPVazia.complete) {
+        des.drawImage(imgBarraXPVazia, 550, 0, larguraTotal, alturaBarra);
+    } else {
+        // Fallback de segurança: Caso a imagem demore a carregar, desenha um fundo escuro
+        des.fillStyle = "#111116";
+        des.fillRect(0, 0, larguraTotal, alturaBarra);
+    }
+
+    // 2. Calcula a proporção matemática do XP atual contra a meta necessária
+    let proporcaoXp = sistemaArmas.currentXp / sistemaArmas.xpNeeded;
+    if (proporcaoXp > 1) proporcaoXp = 1; // Trava em 100% para não vazar a tela
+    
+    // Deixamos uma margem de 2 pixels nas bordas para o preenchimento não cobrir a moldura da imagem
+    let larguraPreenchimento = (larguraTotal - 4) * proporcaoXp;
+
+    // 3. Desenha o preenchimento VERDE elétrico por cima da barra vazia
+    if (larguraPreenchimento > 0) {
+        des.fillStyle = "#2ecc71"; // Verde vibrante
+        des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 4);
+
+        // Detalhe extra: Efeito de brilho na parte de cima do preenchimento verde (opcional, dá estilo)
+        des.fillStyle = "#58d68d"; 
+        des.fillRect(2, 2, larguraPreenchimento, 4);
+    }
+
+    // 4. Texto indicador do Nível e progresso numérico (Branco com contorno preto para leitura fácil)
+    des.fillStyle = "#ffffff";
+    des.font = "bold 13px Arial";
+    des.textAlign = "right";
+    
+    let textoXP = `LV. ${sistemaArmas.level}  |  ${sistemaArmas.currentXp} / ${sistemaArmas.xpNeeded} XP`;
+    
+    // Contorno preto no texto
+    des.strokeStyle = "#000000";
+    des.lineWidth = 3;
+    des.strokeText(textoXP, canvas.width - 20, alturaBarra + 20);
+    // Texto branco por cima
+    des.fillText(textoXP, canvas.width - 20, alturaBarra + 20);
+    
+    des.textAlign = "left"; // Reseta o alinhamento do canvas
+}
 
 // ============================ MAIN ===================================
 
@@ -256,7 +396,12 @@ function desenha() {
     inimigos.forEach(inimigo => {
         inimigo.desenhar(des);
     });
+    // --- INTERFACE HUD (Sempre desenhada por último para ficar em cima de tudo) ---
+    desenharBarraXP();
+    desenharInventarioVisual();
 }
+
+
 
 function atualiza(deltaTime) {
     let limiteCima = 0;
