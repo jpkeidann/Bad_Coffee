@@ -19,8 +19,15 @@ des.imageSmoothingEnabled = false;
 des.webkitImageSmoothingEnabled = false;
 des.mozImageSmoothingEnabled = false;
 
+let player = new Player(200, 200, 128, 128, "../Img/bad_coffee.png")
 
-let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
+player.hitbox = {
+    x: 4,  
+    y: 4,  
+    w: 120,  
+    h: 120   
+};
+
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
 
 // Substitua o caminho abaixo pelo local correto onde guardou a imagem da barra vazia
@@ -389,7 +396,8 @@ function desenharBarraXP() {
 
 function desenha() {
     player.des_player();
-    player.desenharBarraVida(des); // <--- ADICIONADO AQUI PARA DESENHAR A BARRA DE VIDA!
+    player.desenharBarraVida(des);
+    player.desenharHitbox(des);
     desenharTiros();
 
     // Desenha todos os inimigos vivos na tela ---
@@ -417,8 +425,17 @@ function atualiza(deltaTime) {
     //davi
     // Atualiza a inteligência e movimento dos inimigos 
     inimigos.forEach(inimigo => {
-        inimigo.atualizarI();
+        inimigo.atualizarI(inimigos);
     });
+
+    if (!descansoAtivo && inimigosParaSpawnar > 0) {
+        frameTimer += deltaTime;
+        if (frameTimer >= 500) {
+            spawnarInimigo();
+            inimigosParaSpawnar--;
+            frameTimer = 0;
+        }
+    }
 
     // Controlador de Ritmo de Spawn ---
     if (!descansoAtivo && inimigosParaSpawnar > 0) {

@@ -130,4 +130,19 @@ class Player extends Obj {
         contexto.lineWidth = 1;
         contexto.strokeRect(barraX, barraY, larguraBarra, alturaBarra);
     }
-}
+    
+    desenharHitbox(contexto) {
+        contexto.strokeStyle = "lime"; // Cor verde para destacar bem
+        contexto.lineWidth = 2;        // Espessura da linha
+        
+        // Desenha o retângulo usando a posição atual do player + o deslocamento da hitbox
+        contexto.strokeRect(
+            this.x + this.hitbox.x, 
+            this.y + this.hitbox.y, 
+            this.hitbox.w, 
+            this.hitbox.h
+        );
+    }
+};
+
+
