@@ -28,7 +28,7 @@ const imgBarraXPVazia = new Image();
 imgBarraXPVazia.src = '../Img/2xp_bar_img.png'
 
 const imgBarraInventario = new Image();
-imgBarraInventario.src = "../img/barra_item.png"; // Certifica-te de que o nome do ficheiro está correto na tua pasta
+imgBarraInventario.src = "../Img/barra_item.png"; // Certifica-te de que o nome do ficheiro está correto na tua pasta
 
 // ============= PLAYER =============
 // -joão
