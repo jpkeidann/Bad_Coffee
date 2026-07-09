@@ -19,13 +19,13 @@ des.imageSmoothingEnabled = false;
 des.webkitImageSmoothingEnabled = false;
 des.mozImageSmoothingEnabled = false;
 
-let player = new Player(200, 200, 128, 128, "../Img/bad_coffee.png")
+let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
 
 player.hitbox = {
     x: 4,  
     y: 4,  
-    w: 120,  
-    h: 120   
+    w: 56,  
+    h: 56  
 };
 
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
