@@ -37,6 +37,10 @@ imgBarraXPVazia.src = '../Img/2xp_bar_img.png'
 const imgBarraInventario = new Image();
 imgBarraInventario.src = "../Img/barra_item.png"; // Certifica-te de que o nome do ficheiro está correto na tua pasta
 
+// Adicione isto junto com as outras imagens no topo do código
+const imgBackground = new Image();
+imgBackground.src = "../Img/Background.png"; // Certifica-te de que a pasta (maiuscula/minuscula) está corretac:\Users\PC\Downloads\Background.png
+
 // ============= PLAYER =============
 // -joão
 
@@ -78,102 +82,177 @@ function controlarPlayers() {
 
 // --- ARRAYS DE CONTROLE ---
 // --- Abel --- 
-let tirosNaTela = []
+let tirosNaTela = [];
+
 function controlarTiros(deltaTime) {
-    // 1. Pega os tiros passando a array correta de inimigos da Wave
+    // 1. Dispara os tiros calculados pelas armas do Abel contra os inimigos do Davi
     let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, player, inimigos);
 
     let centroPx = player.x + player.w / 2;
     let centroPy = player.y + player.h / 2;
 
-    // 2. Criação do projétil baseada no comportamento
     disparosFeitos.forEach(tiro => {
         if (tiro.target) {
             let dx = tiro.target.x - centroPx;
             let dy = tiro.target.y - centroPy;
             let anguloAlvo = Math.atan2(dy, dx); 
 
-            // COMPORTAMENTO 1: Tiro Reto (Pistola, MP5, Lança, Gjallahorn)
+            // Criamos um objeto de imagem persistente para a bala não recarregar do zero a cada frame
+            if (!tiro.bulletImgObjeto && tiro.bulletImgSrc) {
+                tiro.bulletImgObjeto = new Image();
+                tiro.bulletImgObjeto.src = tiro.bulletImgSrc;
+            }
+
+            // ESTILO 1: Tiro Sequencial / Direto (P320, MP5, Gjallahorn)
             if (tiro.shootBehavior === 'sequence') {
                 tirosNaTela.push({
                     x: centroPx, y: centroPy,
                     vx: Math.cos(anguloAlvo) * tiro.projectileSpeed,
                     vy: Math.sin(anguloAlvo) * tiro.projectileSpeed,
+                    angulo: anguloAlvo, img: tiro.bulletImgObjeto,
                     type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 2000 
+                    tempoVida: 2000, w: 36, h: 36 // Dimensões da bala no ecrã
                 });
             } 
-            // COMPORTAMENTO 2: Cone / Espingarda (KS-23)
+            // ESTILO 2: Cone / Espingarda espalhada (KS-23)
             else if (tiro.shootBehavior === 'cone') {
                 for(let i = -1; i <= 1; i++) {
-                    let spread = anguloAlvo + (i * 0.2); 
+                    let spread = anguloAlvo + (i * 0.25); // Abre o ângulo para os lados
                     tirosNaTela.push({
                         x: centroPx, y: centroPy,
                         vx: Math.cos(spread) * tiro.projectileSpeed,
                         vy: Math.sin(spread) * tiro.projectileSpeed,
+                        angulo: spread, img: tiro.bulletImgObjeto,
                         type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                        tempoVida: 800 
+                        tempoVida: 800, w: 16, h: 16
                     });
                 }
             }
-            // COMPORTAMENTO 3: Corte / Sabre de Luz
+            // ESTILO 3: Corte Corpo a Corpo (Sabre de Luz)
             else if (tiro.shootBehavior === 'slash') {
                  tirosNaTela.push({
-                    x: centroPx + Math.cos(anguloAlvo) * 60, 
-                    y: centroPy + Math.sin(anguloAlvo) * 60,
-                    vx: 0, vy: 0, 
+                    x: centroPx + Math.cos(anguloAlvo) * 50, 
+                    y: centroPy + Math.sin(anguloAlvo) * 50,
+                    vx: 0, vy: 0, angulo: anguloAlvo, img: tiro.bulletImgObjeto,
                     type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 200 
+                    tempoVida: 150, w: 64, h: 48 // O corte é maior
                 });
             }
-            // COMPORTAMENTO 4: Órbita / Adaga
+            // ESTILO 4: Escudo Orbital Giratório (Adaga)
             else if (tiro.shootBehavior === 'orbit') {
                  tirosNaTela.push({
                     x: centroPx, y: centroPy,
-                    vx: 0, vy: 0, anguloOrbita: 0, orbitando: true,
+                    vx: 0, vy: 0, anguloOrbita: Math.random() * Math.PI, orbitando: true,
+                    angulo: 0, img: tiro.bulletImgObjeto,
                     type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 3000 
+                    tempoVida: 4000, w: 32, h: 32
                 });
             }
         }
     });
 
-    // 3. Move os tiros
+    // 2. Movimentação e Atualização Física das Balas
     tirosNaTela.forEach(tiro => {
         if (tiro.orbitando) {
-            tiro.anguloOrbita += 0.1;
-            tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * 80; 
-            tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * 80;
+            tiro.anguloOrbita += 0.05; // Velocidade de rotação ao redor do Grão de Café
+            tiro.x = (player.x + player.w / 2) + Math.cos(tiro.anguloOrbita) * 90; 
+            tiro.y = (player.y + player.h / 2) + Math.sin(tiro.anguloOrbita) * 90;
+            tiro.angulo = tiro.anguloOrbita + Math.PI / 2; // Aponta a ponta da adaga para a frente do giro
         } else {
+            // Balas normais seguem em linha reta multiplicadas pelo tempo real (deltaTime)
             tiro.x += tiro.vx * (deltaTime / 1000);
             tiro.y += tiro.vy * (deltaTime / 1000);
         }
         tiro.tempoVida -= deltaTime;
     });
 
-    // 4. Limpa tiros mortos
+    // 3. Filtra e apaga projéteis que expiraram o tempo de vida
     tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
 }
 
-// Função só para desenhar os tiros (Organização visual)
 function desenharTiros() {
     tirosNaTela.forEach(tiro => {
-        des.beginPath();
-        
-        if (tiro.isCritical) des.fillStyle = "purple"; 
-        else if (tiro.type === 'bullet') des.fillStyle = "yellow";
-        else if (tiro.type === 'pellet') des.fillStyle = "orange";
-        else if (tiro.type === 'force') des.fillStyle = "cyan"; 
-        else if (tiro.type === 'spin') des.fillStyle = "gray";  
-        else des.fillStyle = "white";
-
-        des.arc(tiro.x, tiro.y, 6, 0, Math.PI * 2);
-        des.fill();
+        // Se a imagem da bala estiver carregada com sucesso
+        if (tiro.img && tiro.img.complete && tiro.img.naturalWidth !== 0) {
+            des.save();
+            // Desloca a origem do desenho para o centro do projétil
+            des.translate(tiro.x, tiro.y);
+            // Rotaciona o canvas baseado na direção em que ele voa
+            des.rotate(tiro.angulo);
+            
+            // Desenha o sprite da bala perfeitamente alinhado
+            des.drawImage(tiro.img, -tiro.w / 2, -tiro.h / 2, tiro.w, tiro.h);
+            
+            des.restore();
+        } else {
+            // Fallback de segurança se as imagens das balas ainda não existirem na pasta:
+            des.beginPath();
+            des.fillStyle = tiro.isCritical ? "purple" : "yellow";
+            des.arc(tiro.x, tiro.y, 6, 0, Math.PI * 2);
+            des.fill();
+        }
     });
 }
 
+function verificarColisaoTiros() {
+    for (let i = tirosNaTela.length - 1; i >= 0; i--) {
+        let tiro = tirosNaTela[i];
+        let tiroColidiu = false;
 
+        for (let j = inimigos.length - 1; j >= 0; j--) {
+            let inimigo = inimigos[j];
 
+            // Calcula a distância entre a bala e o inimigo atual
+            let centroInimigoX = inimigo.x + inimigo.w / 2;
+            let centroInimigoY = inimigo.y + inimigo.h / 2;
+            let dx = tiro.x - centroInimigoX;
+            let dy = tiro.y - centroInimigoY;
+            let distancia = Math.sqrt(dx * dx + dy * dy);
+
+            // Margem de acerto padrão para o impacto do projétil (25 pixels)
+            if (distancia < 25) {
+                tiroColidiu = true;
+
+                // COMPORTAMENTO ESPECIAL DA GJALLAHORN (EXPLOSÃO)
+                if (tiro.type === 'big_boom') {
+                    console.log(" Causando dano em área!");
+
+                    let raioExplosao = 120; // Tamanho da hitbox da explosão (em pixels)
+
+                    // Percorre todos os inimigos novamente para dar dano em quem estiver perto da explosão
+                    for (let k = inimigos.length - 1; k >= 0; k--) {
+                        let vitimaArea = inimigos[k];
+                        let cVitimaX = vitimaArea.x + vitimaArea.w / 2;
+                        let cVitimaY = vitimaArea.y + vitimaArea.h / 2;
+                        
+                        // Distância entre o ponto da explosão e o outro inimigo
+                        let ex = tiro.x - cVitimaX;
+                        let ey = tiro.y - cVitimaY;
+                        let distExplosao = Math.sqrt(ex * ex + ey * ey);
+
+                        // Se o inimigo estiver dentro do raio maior da hitbox de explosão
+                        if (distExplosao <= raioExplosao) {
+                            vitimaArea.tomarDano(tiro.damage);
+                        }
+                    }
+                } 
+                // COMPORTAMENTO DAS OUTRAS BALAS NORMAIS (P320, MP5, etc.)
+                else {
+                    inimigo.tomarDano(tiro.damage);
+                }
+
+                break; // Sai do loop de inimigos pois o projétil principal atingiu o alvo
+            }
+        }
+
+        // Se o tiro colidiu, removemos ele da tela (exceto se for o sabre de luz 'force')
+        if (tiroColidiu) {
+            if (tiro.type !== 'force') {
+                tirosNaTela.splice(i, 1);
+            }
+        }
+    }
+}
 
 // ============================ INIMIGOS ===============================
 // -------------- CONFIGURAÇÃO DO SISTEMA DE WAVES ----------------
@@ -190,8 +269,7 @@ const contextoDoJogo = {
     temDoisJogadores: false,
     barraXP: { 
         adicionarXP: (qtd) => { 
-            // Agora conecta o XP dropado pelo inimigo direto no sistema do Abel!
-            sistemaArmas.adicionarXP(qtd); 
+            sistemaArmas.gainXp(qtd); // <--- Corrigido de adicionarXP para gainXp
         } 
     },
     removerInimigo: function(inimigoMorto) {
@@ -345,8 +423,9 @@ function desenharInventarioVisual() {
 
     des.textAlign = "left"; // Reseta o alinhamento
 }
+
 function desenharBarraXP() {
-    let alturaBarra = 96; // Ajuste a altura para ficar proporcional à sua imagem
+    let alturaBarra = 98; // Ajuste a altura para ficar proporcional à sua imagem
     let larguraTotal = 768;
 
     // 1. Desenha a sua imagem de barra vazia como plano de fundo (ocupa o topo de ponta a ponta)
@@ -368,11 +447,7 @@ function desenharBarraXP() {
     // 3. Desenha o preenchimento VERDE elétrico por cima da barra vazia
     if (larguraPreenchimento > 0) {
         des.fillStyle = "#2ecc71"; // Verde vibrante
-        des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 4);
-
-        // Detalhe extra: Efeito de brilho na parte de cima do preenchimento verde (opcional, dá estilo)
-        des.fillStyle = "#58d68d"; 
-        des.fillRect(2, 2, larguraPreenchimento, 4);
+        des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 24);
     }
 
     // 4. Texto indicador do Nível e progresso numérico (Branco com contorno preto para leitura fácil)
@@ -388,16 +463,22 @@ function desenharBarraXP() {
     des.strokeText(textoXP, canvas.width - 20, alturaBarra + 20);
     // Texto branco por cima
     des.fillText(textoXP, canvas.width - 20, alturaBarra + 20);
-    
     des.textAlign = "left"; // Reseta o alinhamento do canvas
 }
 
 // ============================ MAIN ===================================
 
 function desenha() {
+    if (imgBackground.complete) {
+        des.drawImage(imgBackground, 0, 0, canvas.width, canvas.height);
+    } else {
+        // Fallback de segurança: caso a imagem falhe, limpa com uma cor escura
+        des.fillStyle = "#2c3e50";
+        des.fillRect(0, 0, canvas.width, canvas.height);
+    }
     player.des_player();
     player.desenharBarraVida(des);
-    player.desenharHitbox(des);
+    // player.desenharHitbox(des);
     desenharTiros();
 
     // Desenha todos os inimigos vivos na tela ---
@@ -424,6 +505,9 @@ function atualiza(deltaTime) {
     
     //davi
     // Atualiza a inteligência e movimento dos inimigos 
+
+    verificarColisaoTiros();
+
     inimigos.forEach(inimigo => {
         inimigo.atualizarI(inimigos);
     });

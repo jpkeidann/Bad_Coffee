@@ -1,11 +1,11 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/P320.png" },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png" },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/kS-23.png" },
-    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1, imgSrc: "../Img/armas/Lightsaber.png" },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjhallahorn.png" },
-    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/dagger.png" },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/p320.png", bulletImgSrc: "../img/bala.png" },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png" },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/ks_23.png", bulletImgSrc: "../img/bala.png" },
+    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png" },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjallahorn.png", bulletImgSrc: "../img/foguete.png" },
+    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/dagger.png", bulletImgSrc: "../img/armas/dagger.png" },
     
     // --- ITENS (ACESSÓRIOS) ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/itens/seringa.png" },
@@ -102,13 +102,15 @@ class GameSystem {
                 }
 
                 weaponsThatFired.push({
-                    id: weapon.id,
-                    projectileType: weapon.projectileType,
-                    projectileSpeed: weapon.projectileSpeed,
-                    damage: finalDamage,
-                    isCritical: isCrit, // Sinaliza para o index.js desenhar o tiro de forma diferente se quiser
-                    target: targetEnemy
-                });
+    id: weapon.id,
+    projectileType: weapon.projectileType,
+    projectileSpeed: weapon.projectileSpeed,
+    damage: finalDamage,
+    isCritical: isCrit, 
+    target: targetEnemy,
+    shootBehavior: weapon.shootBehavior,
+    bulletImgSrc: weapon.bulletImgSrc   
+});
             }
         });
 
