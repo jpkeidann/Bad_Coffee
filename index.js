@@ -175,23 +175,56 @@ function desenharTiros() {
 
 
 
-// ============================ INIMIGOS ===============================
 // -------------- CONFIGURAÇÃO DO SISTEMA DE WAVES ----------------
 let inimigos = [];
+let tirosInimigosNaTela = []; 
 let waveAtual = 1;
-let inimigosParaSpawnar = 0; // Quantos ainda faltam nascer nesta wave
-let inimigosVivos = 0;       // Quantos inimigos restam na tela
-let frameTimer = 0;          // Temporizador para controlar o ritmo de nascimento
-let descansoAtivo = false;   // Controla os segundos de paz entre as waves
+let limiteDeWaves = 5; // O jogo termina após a Wave 5
+let inimigosParaSpawnar = 0; 
+let inimigosVivos = 0;       
+let frameTimer = 0;          
+let descansoAtivo = false;   
+let filaDeSpawn = []; // Guarda a lista de inimigos que vão nascer nesta wave
 
-// Este objeto resolve os pedidos que a classe Inimigo faz 
+// --- TABELA DE WAVES: DEFINE EXATAMENTE O QUE NASCE EM CADA UMA ---
+const COMPOSICAO_WAVES = {
+    1: { 
+        acaro: 10, 
+        bichoMineiro: 0, 
+        broca: 0, 
+        boss: 0
+    },
+    2: { 
+        acaro: 12, 
+        bichoMineiro: 3, 
+        broca: 0, 
+        boss: 0 
+    },
+    3: { 
+        acaro: 15, 
+        bichoMineiro: 5, 
+        broca: 3, 
+        boss: 0 
+    },
+    4: { 
+        acaro: 15, 
+        bichoMineiro: 8, 
+        broca: 8, 
+        boss: 0 },
+    5: { 
+        acaro: 5,  
+        bichoMineiro: 0, 
+        broca: 5, 
+        boss: 1 
+    } 
+};
+
 const contextoDoJogo = {
     jogadores: [player],
     temDoisJogadores: false,
     barraXP: { 
         adicionarXP: (qtd) => { 
-            // Agora conecta o XP dropado pelo inimigo direto no sistema do Abel!
-            sistemaArmas.adicionarXP(qtd); 
+            if (typeof sistemaArmas !== 'undefined') sistemaArmas.adicionarXP(qtd); 
         } 
     },
     removerInimigo: function(inimigoMorto) {
@@ -201,63 +234,95 @@ const contextoDoJogo = {
     }
 };
 
-// Lógica para preparar a quantidade de monstros da rodada
 function iniciarWave() {
+    if (waveAtual > limiteDeWaves) return;
+
     console.log(`=== INICIANDO WAVE ${waveAtual} ===`);
     descansoAtivo = false;
+    filaDeSpawn = [];
     
-    // Configura a quantidade: Wave 1 = 5, Wave 2 = 10, Wave 3 = 15...
-    let quantidadeNestaWave = 5 * waveAtual; 
-    
-    inimigosParaSpawnar = quantidadeNestaWave;
-    inimigosVivos = quantidadeNestaWave;
+    // Lê a composição da Wave atual
+    let config = COMPOSICAO_WAVES[waveAtual];
+
+    // Preenche a fila de spawn com base nas quantidades
+    for(let i = 0; i < config.acaro; i++) filaDeSpawn.push(TIPOS_INIMIGOS.acaro);
+    for(let i = 0; i < config.bichoMineiro; i++) filaDeSpawn.push(TIPOS_INIMIGOS.bichoMineiro);
+    for(let i = 0; i < config.broca; i++) filaDeSpawn.push(TIPOS_INIMIGOS.broca);
+    for(let i = 0; i < config.boss; i++) filaDeSpawn.push(TIPOS_INIMIGOS.cigarraBoss);
+
+    // Embaralha a fila (para os bichos virem misturados, e não tudo da mesma espécie de uma vez)
+    filaDeSpawn.sort(() => Math.random() - 0.5);
+
+    inimigosParaSpawnar = filaDeSpawn.length;
+    inimigosVivos = filaDeSpawn.length;
 }
 
 function verificarFimDaWave() {
-    // Se todos morreram e nenhum outro vai nascer, avança a wave
+    // Se matou todo mundo e não tem mais ninguém na fila pra nascer
     if (inimigosVivos <= 0 && inimigosParaSpawnar <= 0) {
+        
+        if (waveAtual === limiteDeWaves) {
+            console.log("=== VITÓRIA! A GRANDE CIGARRA FOI DERROTADA! ===");
+            descansoAtivo = true;
+            // AQUI VOCÊ PODE CHAMAR A SUA TELA DE VITÓRIA SEU CORNO!
+            return; 
+        }
+
         console.log(`Wave ${waveAtual} concluída! Próxima em 3 segundos...`);
         waveAtual++;
         descansoAtivo = true;
-        
-        // 3 segundos de descanso antes da próxima horda
         setTimeout(iniciarWave, 3000);
     }
 }
 
 // ----------------------- SPAWN DE INIMIGOS -----------------------
 function spawnarInimigo() {
+    if (filaDeSpawn.length === 0) return; // Se a fila acabou, não spawna mais
+
+    // Pega o próximo inimigo da fila
+    let tipoSorteado = filaDeSpawn.pop();
+    inimigosParaSpawnar--;
+
+    // Sorteia posição nas bordas
     let spawnX, spawnY; 
-    if (Math.random() < 0.5) {
-        spawnX = Math.random() * canvas.width;
-        spawnY = Math.random() < 0.5 ? -50 : canvas.height + 50;
+    
+    // Se for Boss, nasce no topo para dar mais imponência
+    if (tipoSorteado.id === "boss") {
+        spawnX = canvas.width / 2 - 75; 
+        spawnY = -150;
     } else {
-        spawnX = Math.random() < 0.5 ? -50 : canvas.width + 50;
-        spawnY = Math.random() * canvas.height;
+        if (Math.random() < 0.5) {
+            spawnX = Math.random() * canvas.width;
+            spawnY = Math.random() < 0.5 ? -50 : canvas.height + 50;
+        } else {
+            spawnX = Math.random() < 0.5 ? -50 : canvas.width + 50;
+            spawnY = Math.random() * canvas.height;
+        }
     }
 
-    let configInimigo = { 
-        nome: "Praga do Café", 
-        velocidade: 2 + (Math.random() * 0.5), 
-        vida: 10, 
-        dano: 1, 
-        xp: 5 
-    };
+    // Escolhe a classe e o tamanho baseado no tipo
+    let Classe, sizeW, sizeH;
 
-    let larguraInimigo = 40; 
-    let alturaInimigo = 40;  
-    let imagemInimigo = "";  // Deixe vazio por enquanto para ver o quadrado vermelho 
+    switch(tipoSorteado.id) {
+        case "bichoMineiro":
+            Classe = InimigoAtirador;
+            sizeW = 50; sizeH = 50;
+            break;
+        case "boss":
+            Classe = BossCigarra;
+            sizeW = 150; sizeH = 150;
+            break;
+        case "broca":
+            Classe = InimigoMelee;
+            sizeW = 45; sizeH = 45;
+            break;
+        default: // Ácaro
+            Classe = InimigoMelee;
+            sizeW = 40; sizeH = 40;
+            break;
+    }
 
-    let novoInimigo = new Inimigo(
-        spawnX, 
-        spawnY, 
-        larguraInimigo, 
-        alturaInimigo, 
-        imagemInimigo, 
-        configInimigo, 
-        contextoDoJogo
-    );
-    
+    let novoInimigo = new Classe(spawnX, spawnY, sizeW, sizeH, "", tipoSorteado, contextoDoJogo);
     inimigos.push(novoInimigo);
 }
 
