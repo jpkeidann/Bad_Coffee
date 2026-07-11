@@ -1,17 +1,17 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/p320.png", bulletImgSrc: "../img/bala.png" },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png", bulletImgSrc: "../img/bala.png" },
     { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png" },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/ks_23.png", bulletImgSrc: "../img/bala.png" },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png", bulletImgSrc: "../img/bala.png" },
     { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png" },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjallahorn.png", bulletImgSrc: "../img/foguete.png" },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/foguete.png" },
     { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/dagger.png", bulletImgSrc: "../img/armas/dagger.png" },
     
     // --- ITENS (ACESSÓRIOS) ---
-    { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/itens/seringa.png" },
-    { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.', imgSrc: "../Img/itens/armadura.png" },
-    { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.', imgSrc: "../Img/itens/leite.png" },
-    { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.', imgSrc: "../Img/itens/casca.png" }
+    { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
+    { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.', imgSrc: "../Img/armadura.png" },
+    { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.', imgSrc: "../Img/milk.png" },
+    { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.', imgSrc: "../Img/casca.png" }
 ];
 
 class GameSystem {
@@ -40,29 +40,63 @@ class GameSystem {
         this.maxItemSlots = 2;
     }
 
-    gainXp(amount) {
+   gainXp(amount) {
         this.currentXp += amount;
-
-        // Usamos "while" em vez de "if" para o caso de o jogador ganhar muito XP de uma vez só
+        
         if (this.currentXp >= this.xpNeeded) {
-            this.currentXp -= this.xpNeeded;
+            this.currentXp -= this.xpNeeded; 
             this.level++;
 
-            // MATEMÁTICA PROGRESSIVA (Estilo Vampire Survivors):
-            // Nível 1 precisa de 20 XP. Nível 2 precisará de 50 XP. Nível 3 precisará de 65 XP...
-            this.xpNeeded = Math.floor(20 + (this.level * 15));
+            this.xpNeeded = Math.floor(20 + (this.level * 15)); 
 
-            console.log(`Subiu para o Nível ${this.level}! Próxima meta: ${this.xpNeeded} XP`);
+            console.log(`Subiu para o Nível ${this.level}!`);
 
-            // Mantém o retorno original para abrir o menu de escolhas do Abel
-            return {
-                leveledUp: true,
-                choices: this.generateChoices()
-            };
+            // Ativa o estado de Menu no jogo passando as duas opções sorteadas
+            window.ativarMenuLevelUp(this.generateChoices());
         }
-        return { leveledUp: false, choices: [] };
     }
 
+    // Função que gerencia o inventário ao clicar em uma carta
+    buyItem(chosenItem) {
+        let isWeapon = chosenItem.type === 'weapon';
+        let targetArray = isWeapon ? this.weapons : this.items;
+        let maxSlots = isWeapon ? this.maxWeaponSlots : this.maxItemSlots;
+
+        // Verifica se o item já existe no inventário
+        let existing = targetArray.find(item => item.id === chosenItem.id);
+
+        if (existing) {
+            if (existing.level < existing.maxLevel) {
+                existing.level++;
+                // Aplica a melhora real nos atributos da arma/item
+                if (isWeapon) {
+                    if (existing.id === 'p320') existing.damage += 5;
+                    else if (existing.id === 'mp5') { existing.damage += 2; existing.cooldown -= 50; }
+                    else if (existing.id === 'ks_23') existing.damage += 10;
+                    else if (existing.id === 'lightsaber') existing.damage += 15;
+                    else if (existing.id === 'gjallahorn') existing.damage += 25;
+                    else if (existing.id === 'dagger') existing.cooldown -= 100;
+                } else {
+                    this.executePassiveBuff(existing.id);
+                }
+                return true; // Sucesso
+            }
+            return false; // Nível Máximo alcançado
+        } 
+
+        // Se não existe, tenta adicionar num slot vazio
+        if (targetArray.length < maxSlots) {
+            let clonedItem = { ...chosenItem, level: 1, timer: 0 };
+            targetArray.push(clonedItem);
+
+            if (!isWeapon) {
+                this.executePassiveBuff(clonedItem.id);
+            }
+            return true;
+        }
+
+        return false; // Sem espaço no inventário
+    }
     generateChoices() {
         const availableChoices = catalogoGlobal.filter(poolItem => {
             const alreadyHas = this.weapons.find(w => w.id === poolItem.id) || this.items.find(i => i.id === poolItem.id);

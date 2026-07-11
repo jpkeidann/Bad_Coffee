@@ -41,6 +41,171 @@ imgBarraInventario.src = "../Img/barra_item.png"; // Certifica-te de que o nome 
 const imgBackground = new Image();
 imgBackground.src = "../Img/Background.png"; // Certifica-te de que a pasta (maiuscula/minuscula) está corretac:\Users\PC\Downloads\Background.png
 
+
+// --- SISTEMA DE LEVEL UP (XÍCARA E ESCOLHAS) ---
+const imgXicara = new Image();
+imgXicara.src = "../Img/xicara.png"; // Certifique-se de que o caminho está correto
+
+let menuLevelUpAtivo = false;
+let opcoesDeEscolha = [];
+let animacaoXicaraTimer = 0;
+
+// Variáveis de controle de animação dos dois botões de itens
+let itemEsquerda = { x: 0, y: 0, escala: 0, alpha: 0, dados: null };
+let itemDireita = { x: 0, y: 0, escala: 0, alpha: 0, dados: null };
+
+
+window.ativarMenuLevelUp = function(escolhas) {
+    if (escolhas.length === 0) {
+        // Se o inventário e os níveis estiverem todos no MÁXIMO
+        player.vidaAtual = player.vidaMaxima; // Cura o jogador
+        console.log("Tudo no máximo! O café recuperou toda a vida.");
+        return; 
+    }
+    
+    menuLevelUpAtivo = true;
+    opcoesDeEscolha = escolhas;
+    animacaoXicaraTimer = 0;
+
+    let centroX = canvas.width / 2;
+    let centroY = canvas.height / 2;
+
+    // Se só sobrar 1 opção válida no jogo inteiro, repete ela nos dois lados
+    let op1 = escolhas[0];
+    let op2 = escolhas.length > 1 ? escolhas[1] : escolhas[0];
+
+    itemEsquerda = { x: centroX, y: centroY, escala: 0, alpha: 0, dados: op1 };
+    itemDireita = { x: centroX, y: centroY, escala: 0, alpha: 0, dados: op2 };
+};
+
+function atualizarEdesenharMenuLevelUp(deltaTime) {
+    if (!menuLevelUpAtivo) return;
+
+    // 1. Escurece o fundo do jogo suavemente para dar foco ao menu
+    des.fillStyle = "rgba(0, 0, 0, 0.6)";
+    des.fillRect(0, 0, canvas.width, canvas.height);
+
+    let centroX = canvas.width / 2;
+    let centroY = canvas.height / 2;
+
+    // 2. Desenha a Xícara no centro
+    let tamXicara = 120;
+    if (imgXicara.complete) {
+        des.drawImage(imgXicara, centroX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
+    }
+
+    // 3. ANIMAÇÃO: Os itens sobem flutuando para fora da xícara
+    animacaoXicaraTimer += deltaTime / 1000; // Converte para segundos
+
+    // Alvos finais de posicionamento para as duas cartas
+    let alvoY = centroY - 120; 
+    let alvoXEsquerda = centroX - 100;
+    let alvoXDireita = centroX + 100;
+
+    // Interpolação Linear (Suavização Lerp)
+    let t = Math.min(animacaoXicaraTimer * 3, 1); // Chega ao topo em ~0.3 segundos
+
+    itemEsquerda.x = centroX + (alvoXEsquerda - centroX) * t;
+    itemEsquerda.y = centroY + (alvoY - centroY) * t;
+    itemEsquerda.escala = t;
+    itemEsquerda.alpha = t;
+
+    itemDireita.x = centroX + (alvoXDireita - centroX) * t;
+    itemDireita.y = centroY + (alvoY - centroY) * t;
+    itemDireita.escala = t;
+    itemDireita.alpha = t;
+
+    // 4. DESENHAR OS DOIS BOTÕES DE ITENS
+    desenharBotaoSelecao(itemEsquerda);
+    desenharBotaoSelecao(itemDireita);
+}
+
+function desenharBotaoSelecao(item) {
+    des.save();
+    des.globalAlpha = item.alpha;
+    des.translate(item.x, item.y);
+    des.scale(item.escala, item.escala);
+
+    // Cartão maior para caber o texto
+    let largCard = 140;
+    let altCard = 160;
+
+    // Fundo do Card
+    des.fillStyle = "#2c3e50";
+    des.strokeStyle = item.dados.type === 'weapon' ? "#f1c40f" : "#2ecc71";
+    des.lineWidth = 4;
+    des.fillRect(-largCard/2, -altCard/2, largCard, altCard);
+    des.strokeRect(-largCard/2, -altCard/2, largCard, altCard);
+
+    // Desenha o Ícone do Item (movido um pouco mais para cima)
+    if (!item.dados.imgObjeto) {
+        item.dados.imgObjeto = new Image();
+        item.dados.imgObjeto.src = item.dados.imgSrc;
+    }
+    if (item.dados.imgObjeto.complete) {
+        des.drawImage(item.dados.imgObjeto, -24, -65, 48, 48);
+    }
+
+    // Texto: Nome do Item
+    des.fillStyle = "#ffffff";
+    des.font = "bold 12px Arial";
+    des.textAlign = "center";
+    des.fillText(item.dados.name, 0, 5);
+
+    // Texto: Tipo (Arma ou Passivo)
+    des.font = "10px Arial";
+    des.fillStyle = "#bdc3c7";
+    let txtInfo = item.dados.type === 'weapon' ? "ARMA" : "ITEM PASSIVO";
+    des.fillText(txtInfo, 0, 22);
+
+    // --- SISTEMA DE DESCRIÇÕES ---
+    des.fillStyle = "#f1c40f"; // Amarelo dourado para os detalhes
+    des.font = "bold 11px Arial";
+
+    if (item.dados.description) {
+        // Se for um item passivo e tiver descrição no catálogo
+        des.fillText(item.dados.description, 0, 45);
+    } else {
+        // Se for uma arma, mostra os status reais atuais dela
+        des.fillStyle = "#e74c3c"; // Vermelho para dano
+        des.fillText(`⚔️ Dano: ${item.dados.damage}`, 0, 45);
+        des.fillStyle = "#3498db"; // Azul para recarga
+        des.fillText(`⚡ Recarga: ${item.dados.cooldown}ms`, 0, 62);
+    }
+
+    des.restore();
+}
+
+canvas.addEventListener('click', (e) => {
+    if (!menuLevelUpAtivo) return;
+
+    // Pega as coordenadas exatas do clique do mouse dentro do canvas
+    let rect = canvas.getBoundingClientRect();
+    let mouseX = e.clientX - rect.left;
+    let mouseY = e.clientY - rect.top;
+
+    let largCard = 140; 
+    let altCard = 160;
+
+    // Função auxiliar para ver se o clique acertou o retângulo do card
+    function clicouNoCard(item) {
+        return (mouseX >= item.x - largCard/2 && mouseX <= item.x + largCard/2 &&
+                mouseY >= item.y - altCard/2 && mouseY <= item.y + altCard/2);
+    }
+
+    let itemEscolhido = null;
+
+    if (clicouNoCard(itemEsquerda)) itemEscolhido = itemEsquerda.dados;
+    if (clicouNoCard(itemDireita)) itemEscolhido = itemDireita.dados;
+
+    if (itemEscolhido) {
+        // Tenta colocar no inventário ou dar upgrade pelo GameSystem
+        sistemaArmas.buyItem(itemEscolhido);
+        
+        menuLevelUpAtivo = false; 
+        console.log(`Escolheu: ${itemEscolhido.name}`);
+    }
+});
 // ============= PLAYER =============
 // -joão
 
@@ -488,6 +653,10 @@ function desenha() {
     // --- INTERFACE HUD (Sempre desenhada por último para ficar em cima de tudo) ---
     desenharBarraXP();
     desenharInventarioVisual();
+    if (menuLevelUpAtivo) {
+        // O deltaTime aqui serve apenas para rodar a animação dos itens subindo
+        atualizarEdesenharMenuLevelUp(16); 
+    }
 }
 
 
@@ -497,6 +666,7 @@ function atualiza(deltaTime) {
     let limiteBaixo = canvas.height;
     let limiteEsq = 0;
     let limiteDir = canvas.width;
+    if (menuLevelUpAtivo) return;
 
     player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
     controlarPlayers()
