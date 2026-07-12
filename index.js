@@ -243,10 +243,16 @@ function controlarTiros(deltaTime) {
     let centroPy = player.y + player.h / 2;
 
     disparosFeitos.forEach(tiro => {
-        if (tiro.target) {
-            let dx = tiro.target.x - centroPx;
-            let dy = tiro.target.y - centroPy;
-            let anguloAlvo = Math.atan2(dy, dx); 
+if (tiro.target || tiro.shootBehavior === 'orbit') {
+            
+            let anguloAlvo = 0; // O ângulo base começa em zero para a adaga
+            
+            // Só calcula a mira se houver um inimigo de verdade
+            if (tiro.target) {
+                let dx = tiro.target.x - centroPx;
+                let dy = tiro.target.y - centroPy;
+                anguloAlvo = Math.atan2(dy, dx); 
+            }
 
             // Encontra a arma que disparou para pegar a imagem dela
             let armaDoTiro = sistemaArmas.weapons.find(w => w.id === tiro.id);
@@ -328,12 +334,28 @@ function controlarTiros(deltaTime) {
             }
             // ESTILO 4: Escudo Orbital Giratório (Adaga)
             else if (tiro.shootBehavior === 'orbit') {
-                 tirosNaTela.push({
-                    x: centroPx, y: centroPy,
-                    vx: 0, vy: 0, anguloOrbita: Math.random() * Math.PI, orbitando: true,
-                    angulo: 0, img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 4000, w: 32, h: 32
+                let raio = armaDoTiro.orbitRadius || 90;
+                let velGiro = armaDoTiro.spinSpeed || 4;
+                let tempoDuracao = armaDoTiro.orbitDuration || 3000;
+                
+
+                tirosNaTela.push({
+                    x: centroPx, 
+                    y: centroPy,
+                    anguloOrbita: -Math.PI / 2, // Começa apontando para cima (12 horas)
+                    distanciaBase: raio,
+                    velocidadeOrbita: velGiro,
+                    tempoVidaTotal: tempoDuracao, 
+                    tempoVida: tempoDuracao,
+                    angulo: 0, 
+                    img: tiro.bulletImgObjeto,
+                    type: tiro.projectileType, 
+                    shootBehavior: 'orbit',
+                    damage: tiro.damage, 
+                    isCritical: tiro.isCritical,
+                    w: 48, h: 16, 
+                    orbitando: true,
+                    inimigosAtingidos: []
                 });
             }
         }
@@ -341,12 +363,21 @@ function controlarTiros(deltaTime) {
 
     // 2. Movimentação e Atualização Física das Balas
     tirosNaTela.forEach(tiro => {
-        if (tiro.orbitando) {
-            tiro.anguloOrbita += 0.05; // Velocidade de rotação ao redor do Grão de Café
-            tiro.x = (player.x + player.w / 2) + Math.cos(tiro.anguloOrbita) * 90; 
-            tiro.y = (player.y + player.h / 2) + Math.sin(tiro.anguloOrbita) * 90;
-            tiro.angulo = tiro.anguloOrbita + Math.PI / 2; // Aponta a ponta da adaga para a frente do giro
-        } else {
+if (tiro.shootBehavior === 'orbit') {
+            let centroPx = player.x + player.w / 2;
+            let centroPy = player.y + player.h / 2;
+
+            // Gira no sentido horário continuamente
+            tiro.anguloOrbita += tiro.velocidadeOrbita * (deltaTime / 1000);
+            
+            // A imagem da adaga aponta para fora como a sawblade
+            tiro.angulo = tiro.anguloOrbita; 
+
+            // Mantém a distância perfeita do jogador
+            tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * tiro.distanciaBase;
+            tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * tiro.distanciaBase;
+            
+        }else {
             // Balas normais seguem em linha reta multiplicadas pelo tempo real (deltaTime)
             tiro.x += tiro.vx * (deltaTime / 1000);
             tiro.y += tiro.vy * (deltaTime / 1000);
@@ -446,15 +477,21 @@ function verificarColisaoTiros() {
 
             // Margem de acerto padrão para o impacto do projétil (25 pixels)
             if (distancia < 25) {
-                if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang') {
+                if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang' || tiro.shootBehavior === 'orbit') {
                     // Escolhe a lista dependendo se o sabre está indo ou voltando
-                    let listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
+                    let listaAtingidos;
                     
-                    // Se este inimigo já apanhou nesta fase da viagem, ignora ele
-                    if (listaAtingidos.includes(inimigo)) continue;
-                    
-                    // Se não apanhou, marca ele na lista
-                    listaAtingidos.push(inimigo);
+                   if (tiro.shootBehavior === 'boomerang') {
+                    // Boomerang usa listas separadas para a IDA e para a VOLTA
+                    listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
+                } else {
+                    // Adaga Orbital usa uma lista única
+                    if (!tiro.inimigosAtingidos) tiro.inimigosAtingidos = [];
+                    listaAtingidos = tiro.inimigosAtingidos;
+                }
+                
+                if (listaAtingidos.includes(inimigo)) continue;
+                listaAtingidos.push(inimigo);
                 }
                 tiroColidiu = true;
 
@@ -492,7 +529,7 @@ function verificarColisaoTiros() {
 
         // Se o tiro colidiu, removemos ele da tela (exceto se for o sabre de luz 'force')
         if (tiroColidiu) {
-            if (tiro.type !== 'force') {
+            if (tiro.type !== 'force' && tiro.shootBehavior !== 'orbit' && tiro.shootBehavior !== 'boomerang') {
                 tirosNaTela.splice(i, 1);
             }
         }

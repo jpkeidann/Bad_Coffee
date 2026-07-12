@@ -10,8 +10,8 @@ const catalogoGlobal = [
       throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
       spinSpeed: 20     // Velocidade do giro da lâmina
     },
-    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true },
-    
+{ id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true, 
+    orbitRadius: 90, spinSpeed: 4, orbitDuration: 3000 },
     { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/TiroGjahllahorn.png", effectW: 90, effectH: 45 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
@@ -128,10 +128,18 @@ class GameSystem {
                     finalDamage = Math.floor(finalDamage * this.critMultiplier);
                 }
 
+if (weapon.timer >= weapon.cooldown) {
                 let targetEnemy = null;
-                if (['sequence', 'cone', 'boomerang', 'orbit'].includes(weapon.shootBehavior)) {
+           
+                // 1. O 'orbit' já não está nesta lista, por isso não procura inimigos!
+                if (['sequence', 'cone', 'boomerang'].includes(weapon.shootBehavior)) {
                     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
                 }
+
+                // 2. A arma atira se tiver um inimigo alvo, OU se for a Adaga ('orbit')
+                if (targetEnemy || weapon.shootBehavior === 'orbit') {
+                    weapon.timer = 0;
+                }}
 
                 weaponsThatFired.push({
                     id: weapon.id,
