@@ -1,13 +1,20 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png", bulletImgSrc: "../img/bala.png" },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png" },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png", bulletImgSrc: "../img/bala.png" },
-    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'slash', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png" },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/foguete.png" },
-    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/dagger.png", bulletImgSrc: "../img/armas/dagger.png" },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 40 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png", effectW: 70, effectH: 35 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 30 },
     
-    // --- ITENS (ACESSÓRIOS) ---
+    // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
+    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png", hideEffect: true, 
+      throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
+      throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
+      spinSpeed: 20     // Velocidade do giro da lâmina
+    },
+    { id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 950, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true },
+    
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/TiroGjahllahorn.png", effectW: 90, effectH: 45 },
+
+    // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
     { id: 'armadura', name: 'Armadura', type: 'passive', maxLevel: 5, description: 'Faz o café ficar mais resistente.', imgSrc: "../Img/armadura.png" },
     { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.', imgSrc: "../Img/milk.png" },
@@ -40,14 +47,14 @@ class GameSystem {
         this.maxItemSlots = 2;
     }
 
-   gainXp(amount) {
+    gainXp(amount) {
         this.currentXp += amount;
-        
+
         if (this.currentXp >= this.xpNeeded) {
-            this.currentXp -= this.xpNeeded; 
+            this.currentXp -= this.xpNeeded;
             this.level++;
 
-            this.xpNeeded = Math.floor(20 + (this.level * 15)); 
+            this.xpNeeded = Math.floor(20 + (this.level * 15));
 
             console.log(`Subiu para o Nível ${this.level}!`);
 
@@ -69,20 +76,11 @@ class GameSystem {
             if (existing.level < existing.maxLevel) {
                 existing.level++;
                 // Aplica a melhora real nos atributos da arma/item
-                if (isWeapon) {
-                    if (existing.id === 'p320') existing.damage += 5;
-                    else if (existing.id === 'mp5') { existing.damage += 2; existing.cooldown -= 50; }
-                    else if (existing.id === 'ks_23') existing.damage += 10;
-                    else if (existing.id === 'lightsaber') existing.damage += 15;
-                    else if (existing.id === 'gjallahorn') existing.damage += 25;
-                    else if (existing.id === 'dagger') existing.cooldown -= 100;
-                } else {
-                    this.executePassiveBuff(existing.id);
-                }
+              
                 return true; // Sucesso
             }
             return false; // Nível Máximo alcançado
-        } 
+        }
 
         // Se não existe, tenta adicionar num slot vazio
         if (targetArray.length < maxSlots) {
@@ -131,20 +129,20 @@ class GameSystem {
                 }
 
                 let targetEnemy = null;
-                if (['sequence', 'cone', 'slash', 'orbit'].includes(weapon.shootBehavior)) {
+                if (['sequence', 'cone', 'boomerang', 'orbit'].includes(weapon.shootBehavior)) {
                     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
                 }
 
                 weaponsThatFired.push({
-    id: weapon.id,
-    projectileType: weapon.projectileType,
-    projectileSpeed: weapon.projectileSpeed,
-    damage: finalDamage,
-    isCritical: isCrit, 
-    target: targetEnemy,
-    shootBehavior: weapon.shootBehavior,
-    bulletImgSrc: weapon.bulletImgSrc   
-});
+                    id: weapon.id,
+                    projectileType: weapon.projectileType,
+                    projectileSpeed: weapon.projectileSpeed,
+                    damage: finalDamage,
+                    isCritical: isCrit,
+                    target: targetEnemy,
+                    shootBehavior: weapon.shootBehavior,
+                    bulletImgSrc: weapon.bulletImgSrc
+                });
             }
         });
 
@@ -225,10 +223,4 @@ class GameSystem {
             this.baseMaxHealth += 25;
         }
     }
-}
-
-// Quando for rodar no navegador usando tag <script>, não precisamos do module.exports. 
-// Mas se o João precisar puxar isso no Node ou Bundler:
-if (typeof module !== 'undefined') {
-    module.exports = { GameSystem, catalogoGlobal };
 }

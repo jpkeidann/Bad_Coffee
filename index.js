@@ -46,6 +46,9 @@ imgBackground.src = "../Img/Background.png"; // Certifica-te de que a pasta (mai
 const imgXicara = new Image();
 imgXicara.src = "../Img/xicara.png"; // Certifique-se de que o caminho está correto
 
+const imgFogueteAnimado = new Image();
+imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
+
 let menuLevelUpAtivo = false;
 let opcoesDeEscolha = [];
 let animacaoXicaraTimer = 0;
@@ -57,9 +60,7 @@ let itemDireita = { x: 0, y: 0, escala: 0, alpha: 0, dados: null };
 
 window.ativarMenuLevelUp = function(escolhas) {
     if (escolhas.length === 0) {
-        // Se o inventário e os níveis estiverem todos no MÁXIMO
-        player.vidaAtual = player.vidaMaxima; // Cura o jogador
-        console.log("Tudo no máximo! O café recuperou toda a vida.");
+        player.vidaAtual = player.vidaMaxima;
         return; 
     }
     
@@ -70,52 +71,48 @@ window.ativarMenuLevelUp = function(escolhas) {
     let centroX = canvas.width / 2;
     let centroY = canvas.height / 2;
 
-    // Se só sobrar 1 opção válida no jogo inteiro, repete ela nos dois lados
     let op1 = escolhas[0];
     let op2 = escolhas.length > 1 ? escolhas[1] : escolhas[0];
 
-    itemEsquerda = { x: centroX, y: centroY, escala: 0, alpha: 0, dados: op1 };
-    itemDireita = { x: centroX, y: centroY, escala: 0, alpha: 0, dados: op2 };
+    // Agora os itens já nascem alinhados com o eixo X final deles
+    let alvoXEsquerda = centroX - 100;
+    let alvoXDireita = centroX + 100;
+
+    // Guardamos o startX para saber onde desenhar as xícaras
+    itemEsquerda = { startX: alvoXEsquerda, x: alvoXEsquerda, y: centroY, escala: 0, alpha: 0, dados: op1 };
+    itemDireita = { startX: alvoXDireita, x: alvoXDireita, y: centroY, escala: 0, alpha: 0, dados: op2 };
 };
 
 function atualizarEdesenharMenuLevelUp(deltaTime) {
     if (!menuLevelUpAtivo) return;
 
-    // 1. Escurece o fundo do jogo suavemente para dar foco ao menu
+    // Fundo escuro cobrindo o jogo todo
     des.fillStyle = "rgba(0, 0, 0, 0.6)";
     des.fillRect(0, 0, canvas.width, canvas.height);
 
     let centroX = canvas.width / 2;
     let centroY = canvas.height / 2;
-
-    // 2. Desenha a Xícara no centro
     let tamXicara = 120;
-    if (imgXicara.complete) {
-        des.drawImage(imgXicara, centroX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
-    }
 
-    // 3. ANIMAÇÃO: Os itens sobem flutuando para fora da xícara
-    animacaoXicaraTimer += deltaTime / 1000; // Converte para segundos
-
-    // Alvos finais de posicionamento para as duas cartas
     let alvoY = centroY - 120; 
-    let alvoXEsquerda = centroX - 100;
-    let alvoXDireita = centroX + 100;
+    animacaoXicaraTimer += deltaTime / 1000;
+    let t = Math.min(animacaoXicaraTimer * 3, 1);
 
-    // Interpolação Linear (Suavização Lerp)
-    let t = Math.min(animacaoXicaraTimer * 3, 1); // Chega ao topo em ~0.3 segundos
-
-    itemEsquerda.x = centroX + (alvoXEsquerda - centroX) * t;
+    // Movimentação Y (Subindo) e Escala
     itemEsquerda.y = centroY + (alvoY - centroY) * t;
     itemEsquerda.escala = t;
     itemEsquerda.alpha = t;
 
-    itemDireita.x = centroX + (alvoXDireita - centroX) * t;
     itemDireita.y = centroY + (alvoY - centroY) * t;
     itemDireita.escala = t;
     itemDireita.alpha = t;
 
-    // 4. DESENHAR OS DOIS BOTÕES DE ITENS
+    // DESENHA AS DUAS XÍCARAS
+    if (imgXicara.complete) {
+        des.drawImage(imgXicara, itemEsquerda.startX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
+        des.drawImage(imgXicara, itemDireita.startX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
+    }
+
     desenharBotaoSelecao(itemEsquerda);
     desenharBotaoSelecao(itemDireita);
 }
@@ -126,50 +123,38 @@ function desenharBotaoSelecao(item) {
     des.translate(item.x, item.y);
     des.scale(item.escala, item.escala);
 
-    // Cartão maior para caber o texto
     let largCard = 140;
     let altCard = 160;
 
-    // Fundo do Card
-    des.fillStyle = "#2c3e50";
-    des.strokeStyle = item.dados.type === 'weapon' ? "#f1c40f" : "#2ecc71";
-    des.lineWidth = 4;
-    des.fillRect(-largCard/2, -altCard/2, largCard, altCard);
-    des.strokeRect(-largCard/2, -altCard/2, largCard, altCard);
-
-    // Desenha o Ícone do Item (movido um pouco mais para cima)
+    // Desenha o Ícone do Item
     if (!item.dados.imgObjeto) {
         item.dados.imgObjeto = new Image();
         item.dados.imgObjeto.src = item.dados.imgSrc;
     }
-    if (item.dados.imgObjeto.complete) {
+    if (item.dados.imgObjeto.complete && item.dados.imgObjeto.naturalWidth !== 0) {
         des.drawImage(item.dados.imgObjeto, -24, -65, 48, 48);
     }
 
-    // Texto: Nome do Item
+    // Textos do Cartão
     des.fillStyle = "#ffffff";
     des.font = "bold 12px Arial";
     des.textAlign = "center";
     des.fillText(item.dados.name, 0, 5);
 
-    // Texto: Tipo (Arma ou Passivo)
     des.font = "10px Arial";
     des.fillStyle = "#bdc3c7";
     let txtInfo = item.dados.type === 'weapon' ? "ARMA" : "ITEM PASSIVO";
     des.fillText(txtInfo, 0, 22);
 
-    // --- SISTEMA DE DESCRIÇÕES ---
-    des.fillStyle = "#f1c40f"; // Amarelo dourado para os detalhes
+    des.fillStyle = "#f1c40f"; 
     des.font = "bold 11px Arial";
 
     if (item.dados.description) {
-        // Se for um item passivo e tiver descrição no catálogo
         des.fillText(item.dados.description, 0, 45);
     } else {
-        // Se for uma arma, mostra os status reais atuais dela
-        des.fillStyle = "#e74c3c"; // Vermelho para dano
+        des.fillStyle = "#e74c3c"; 
         des.fillText(`⚔️ Dano: ${item.dados.damage}`, 0, 45);
-        des.fillStyle = "#3498db"; // Azul para recarga
+        des.fillStyle = "#3498db"; 
         des.fillText(`⚡ Recarga: ${item.dados.cooldown}ms`, 0, 62);
     }
 
@@ -247,6 +232,7 @@ function controlarPlayers() {
 
 // --- ARRAYS DE CONTROLE ---
 // --- Abel --- 
+let efeitosArmas = []; // Guarda os sprites das armas que aparecem rapidamente ao atirar
 let tirosNaTela = [];
 
 function controlarTiros(deltaTime) {
@@ -262,6 +248,26 @@ function controlarTiros(deltaTime) {
             let dy = tiro.target.y - centroPy;
             let anguloAlvo = Math.atan2(dy, dx); 
 
+            // Encontra a arma que disparou para pegar a imagem dela
+            let armaDoTiro = sistemaArmas.weapons.find(w => w.id === tiro.id);
+            if (armaDoTiro) {
+                if (!armaDoTiro.imgObjeto) {
+                    armaDoTiro.imgObjeto = new Image();
+                    armaDoTiro.imgObjeto.src = armaDoTiro.imgSrc;
+                }
+                // Guarda a arma na lista para ela piscar no ecrã
+// Só guarda o efeito se a arma NÃO tiver a tag hideEffect
+                if (!armaDoTiro.hideEffect) {
+                    efeitosArmas.push({
+                        img: armaDoTiro.imgObjeto,
+                        angulo: anguloAlvo,
+                        tempoVida: 150, // Vai aparecer por 150 milissegundos
+                        w: armaDoTiro.effectW || 64, // Pega o tamanho do catálogo (ou 64 por padrão)
+                        h: armaDoTiro.effectH || 32  // Pega a altura do catálogo (ou 32 por padrão)
+                    });
+                }
+            }
+
             // Criamos um objeto de imagem persistente para a bala não recarregar do zero a cada frame
             if (!tiro.bulletImgObjeto && tiro.bulletImgSrc) {
                 tiro.bulletImgObjeto = new Image();
@@ -276,7 +282,9 @@ function controlarTiros(deltaTime) {
                     vy: Math.sin(anguloAlvo) * tiro.projectileSpeed,
                     angulo: anguloAlvo, img: tiro.bulletImgObjeto,
                     type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 2000, w: 36, h: 36 // Dimensões da bala no ecrã
+                    tempoVida: 2000, w: 36, h: 36, // Dimensões da bala no ecrã
+                    frameX: 0, 
+                    frameTimer: 0
                 });
             } 
             // ESTILO 2: Cone / Espingarda espalhada (KS-23)
@@ -289,18 +297,33 @@ function controlarTiros(deltaTime) {
                         vy: Math.sin(spread) * tiro.projectileSpeed,
                         angulo: spread, img: tiro.bulletImgObjeto,
                         type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                        tempoVida: 800, w: 16, h: 16
+                        tempoVida: 1500, w: 16, h: 16
                     });
                 }
             }
-            // ESTILO 3: Corte Corpo a Corpo (Sabre de Luz)
-            else if (tiro.shootBehavior === 'slash') {
-                 tirosNaTela.push({
-                    x: centroPx + Math.cos(anguloAlvo) * 50, 
-                    y: centroPy + Math.sin(anguloAlvo) * 50,
-                    vx: 0, vy: 0, angulo: anguloAlvo, img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 150, w: 64, h: 48 // O corte é maior
+           else if (tiro.shootBehavior === 'boomerang') {
+                let alcance = armaDoTiro.throwRange || 250;
+                let tempoTotal = armaDoTiro.throwTime || 1200;
+                let velGiro = armaDoTiro.spinSpeed || 20;
+
+                tirosNaTela.push({
+                    x: centroPx, y: centroPy,
+                    startX: centroPx, startY: centroPy, // Ponto de onde saiu
+                    anguloDisparo: anguloAlvo, // Direção inicial
+                    alcanceMaximo: alcance,
+                    tempoVidaTotal: tempoTotal,
+                    tempoVida: tempoTotal,
+                    velocidadeGiro: velGiro,
+                    rotacaoAtual: 0,
+                    faseRetorno: false, // Controla se está indo ou voltando
+                    img: tiro.bulletImgObjeto,
+                    type: tiro.projectileType, 
+                    shootBehavior: 'boomerang',
+                    damage: tiro.damage, 
+                    isCritical: tiro.isCritical,
+                    w: 64, h: 64, // Quadrado ajuda no giro centralizado
+                    inimigosAtingidosIda: [], // Quem apanhou na ida
+                    inimigosAtingidosVolta: [] // Quem apanhou na volta
                 });
             }
             // ESTILO 4: Escudo Orbital Giratório (Adaga)
@@ -329,7 +352,45 @@ function controlarTiros(deltaTime) {
             tiro.y += tiro.vy * (deltaTime / 1000);
         }
         tiro.tempoVida -= deltaTime;
-    });
+        if (tiro.type === 'big_boom') {
+            tiro.frameTimer += deltaTime;
+            if (tiro.frameTimer >= 100) { // Muda de imagem a cada 100ms
+                tiro.frameX = (tiro.frameX + 1) % 5; // 5 é a quantidade de desenhos na SpriteSheet
+                tiro.frameTimer = 0;
+            }
+        }
+        if (tiro.shootBehavior === 'boomerang') {
+            // 1. Gira a imagem continuamente
+            tiro.rotacaoAtual += tiro.velocidadeGiro * (deltaTime / 1000);
+            tiro.angulo = tiro.rotacaoAtual;
+
+            // 2. Calcula em que parte da viagem o sabre está
+            let tempoPassado = tiro.tempoVidaTotal - tiro.tempoVida;
+            let metadeTempo = tiro.tempoVidaTotal / 2;
+            let centroPx = player.x + player.w / 2;
+            let centroPy = player.y + player.h / 2;
+
+            if (tempoPassado < metadeTempo) {
+                // FASE 1: IDA (Afastando do player na direção do alvo)
+                tiro.faseRetorno = false;
+                let progressoIda = tempoPassado / metadeTempo; 
+                
+                tiro.x = tiro.startX + Math.cos(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
+                tiro.y = tiro.startY + Math.sin(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
+            } else {
+                // FASE 2: VOLTA (Perseguindo a posição atual do player)
+                tiro.faseRetorno = true;
+                let progressoVolta = (tempoPassado - metadeTempo) / metadeTempo;
+                
+                // Descobre onde foi o limite máximo que o sabre chegou
+                let pontoMaximoX = tiro.startX + Math.cos(tiro.anguloDisparo) * tiro.alcanceMaximo;
+                let pontoMaximoY = tiro.startY + Math.sin(tiro.anguloDisparo) * tiro.alcanceMaximo;
+
+                // Interpola para fazê-lo voltar para a mão do jogador
+                tiro.x = pontoMaximoX + (centroPx - pontoMaximoX) * progressoVolta;
+                tiro.y = pontoMaximoY + (centroPy - pontoMaximoY) * progressoVolta;
+            }
+    }});
 
     // 3. Filtra e apaga projéteis que expiraram o tempo de vida
     tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
@@ -337,20 +398,29 @@ function controlarTiros(deltaTime) {
 
 function desenharTiros() {
     tirosNaTela.forEach(tiro => {
-        // Se a imagem da bala estiver carregada com sucesso
         if (tiro.img && tiro.img.complete && tiro.img.naturalWidth !== 0) {
             des.save();
-            // Desloca a origem do desenho para o centro do projétil
             des.translate(tiro.x, tiro.y);
-            // Rotaciona o canvas baseado na direção em que ele voa
             des.rotate(tiro.angulo);
             
-            // Desenha o sprite da bala perfeitamente alinhado
-            des.drawImage(tiro.img, -tiro.w / 2, -tiro.h / 2, tiro.w, tiro.h);
+            // --- NOVO: Se for o FOGUETE, usa o sistema de SpriteSheet Animada ---
+            if (tiro.type === 'big_boom' && typeof imgFogueteAnimado !== 'undefined' && imgFogueteAnimado.complete) {
+                let larguraQuadro = imgFogueteAnimado.width / 5;
+                let alturaQuadro = imgFogueteAnimado.height;
+                
+                des.drawImage(
+                    imgFogueteAnimado, 
+                    tiro.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro, 
+                    -20, -10, 40, 20 // Posição -20, -10 para centralizar o tamanho 40x20
+                );
+            } 
+            // --- Para todas as outras balas (P320, MP5, Adaga, etc) ---
+            else {
+                des.drawImage(tiro.img, -tiro.w / 2, -tiro.h / 2, tiro.w, tiro.h);
+            }
             
             des.restore();
         } else {
-            // Fallback de segurança se as imagens das balas ainda não existirem na pasta:
             des.beginPath();
             des.fillStyle = tiro.isCritical ? "purple" : "yellow";
             des.arc(tiro.x, tiro.y, 6, 0, Math.PI * 2);
@@ -376,6 +446,16 @@ function verificarColisaoTiros() {
 
             // Margem de acerto padrão para o impacto do projétil (25 pixels)
             if (distancia < 25) {
+                if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang') {
+                    // Escolhe a lista dependendo se o sabre está indo ou voltando
+                    let listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
+                    
+                    // Se este inimigo já apanhou nesta fase da viagem, ignora ele
+                    if (listaAtingidos.includes(inimigo)) continue;
+                    
+                    // Se não apanhou, marca ele na lista
+                    listaAtingidos.push(inimigo);
+                }
                 tiroColidiu = true;
 
                 // COMPORTAMENTO ESPECIAL DA GJALLAHORN (EXPLOSÃO)
@@ -417,6 +497,41 @@ function verificarColisaoTiros() {
             }
         }
     }
+}
+
+function atualizarEfeitosArmas(deltaTime) {
+    // Desconta o tempo de vida de cada arma que está a aparecer na mão
+    for (let i = efeitosArmas.length - 1; i >= 0; i--) {
+        efeitosArmas[i].tempoVida -= deltaTime;
+        if (efeitosArmas[i].tempoVida <= 0) {
+            efeitosArmas.splice(i, 1); // Remove quando o tempo (150ms) acaba
+        }
+    }
+}
+
+function desenharEfeitosArmas() {
+    let centroPx = player.x + player.w / 2;
+    let centroPy = player.y + player.h / 2;
+
+    efeitosArmas.forEach(ef => {
+        if (ef.img && ef.img.complete && ef.img.naturalWidth !== 0) {
+            des.save();
+            // Move o eixo para o centro do jogador
+            des.translate(centroPx, centroPy);
+            // Gira a arma para apontar para o inimigo
+            des.rotate(ef.angulo);
+            
+            // Impede a arma de ficar de cabeça para baixo se atirar para trás
+            let atirandoParaEsquerda = (ef.angulo > Math.PI/2 && ef.angulo < 3*Math.PI/2) || (ef.angulo < -Math.PI/2);
+            if (atirandoParaEsquerda) {
+                des.scale(1, -1);
+            }
+            
+            // Desenha a arma afastada 15 pixels do corpo ( Largura = 32, Altura = 16 )
+            des.drawImage(ef.img, 15, -(ef.h / 2), ef.w * 2, ef.h * 2);
+            des.restore();
+        }
+    });
 }
 
 // ============================ INIMIGOS ===============================
@@ -643,7 +758,7 @@ function desenha() {
     }
     player.des_player();
     player.desenharBarraVida(des);
-    // player.desenharHitbox(des);
+   desenharEfeitosArmas();
     desenharTiros();
 
     // Desenha todos os inimigos vivos na tela ---
@@ -672,6 +787,7 @@ function atualiza(deltaTime) {
     controlarPlayers()
 
     controlarTiros(deltaTime); 
+    atualizarEfeitosArmas(deltaTime);
     
     //davi
     // Atualiza a inteligência e movimento dos inimigos 
@@ -702,6 +818,7 @@ function atualiza(deltaTime) {
         }
     }
 }
+
 let ultimoTempo = 0
 
 function main(tempoAtual) {
