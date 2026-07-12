@@ -22,10 +22,10 @@ des.mozImageSmoothingEnabled = false;
 let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
 
 player.hitbox = {
-    x: 4,  
-    y: 4,  
-    w: 56,  
-    h: 56  
+    x: 4,
+    y: 4,
+    w: 56,
+    h: 56
 };
 
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
@@ -58,12 +58,12 @@ let itemEsquerda = { x: 0, y: 0, escala: 0, alpha: 0, dados: null };
 let itemDireita = { x: 0, y: 0, escala: 0, alpha: 0, dados: null };
 
 
-window.ativarMenuLevelUp = function(escolhas) {
+window.ativarMenuLevelUp = function (escolhas) {
     if (escolhas.length === 0) {
         player.vidaAtual = player.vidaMaxima;
-        return; 
+        return;
     }
-    
+
     menuLevelUpAtivo = true;
     opcoesDeEscolha = escolhas;
     animacaoXicaraTimer = 0;
@@ -94,7 +94,7 @@ function atualizarEdesenharMenuLevelUp(deltaTime) {
     let centroY = canvas.height / 2;
     let tamXicara = 120;
 
-    let alvoY = centroY - 120; 
+    let alvoY = centroY - 120;
     animacaoXicaraTimer += deltaTime / 1000;
     let t = Math.min(animacaoXicaraTimer * 3, 1);
 
@@ -109,8 +109,8 @@ function atualizarEdesenharMenuLevelUp(deltaTime) {
 
     // DESENHA AS DUAS XÍCARAS
     if (imgXicara.complete) {
-        des.drawImage(imgXicara, itemEsquerda.startX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
-        des.drawImage(imgXicara, itemDireita.startX - tamXicara/2, centroY - tamXicara/3, tamXicara, tamXicara);
+        des.drawImage(imgXicara, itemEsquerda.startX - tamXicara / 2, centroY - tamXicara / 3, tamXicara, tamXicara);
+        des.drawImage(imgXicara, itemDireita.startX - tamXicara / 2, centroY - tamXicara / 3, tamXicara, tamXicara);
     }
 
     desenharBotaoSelecao(itemEsquerda);
@@ -146,15 +146,15 @@ function desenharBotaoSelecao(item) {
     let txtInfo = item.dados.type === 'weapon' ? "ARMA" : "ITEM PASSIVO";
     des.fillText(txtInfo, 0, 22);
 
-    des.fillStyle = "#f1c40f"; 
+    des.fillStyle = "#f1c40f";
     des.font = "bold 11px Arial";
 
     if (item.dados.description) {
         des.fillText(item.dados.description, 0, 45);
     } else {
-        des.fillStyle = "#e74c3c"; 
+        des.fillStyle = "#e74c3c";
         des.fillText(`⚔️ Dano: ${item.dados.damage}`, 0, 45);
-        des.fillStyle = "#3498db"; 
+        des.fillStyle = "#3498db";
         des.fillText(`⚡ Recarga: ${item.dados.cooldown}ms`, 0, 62);
     }
 
@@ -169,13 +169,13 @@ canvas.addEventListener('click', (e) => {
     let mouseX = e.clientX - rect.left;
     let mouseY = e.clientY - rect.top;
 
-    let largCard = 140; 
+    let largCard = 140;
     let altCard = 160;
 
     // Função auxiliar para ver se o clique acertou o retângulo do card
     function clicouNoCard(item) {
-        return (mouseX >= item.x - largCard/2 && mouseX <= item.x + largCard/2 &&
-                mouseY >= item.y - altCard/2 && mouseY <= item.y + altCard/2);
+        return (mouseX >= item.x - largCard / 2 && mouseX <= item.x + largCard / 2 &&
+            mouseY >= item.y - altCard / 2 && mouseY <= item.y + altCard / 2);
     }
 
     let itemEscolhido = null;
@@ -186,8 +186,8 @@ canvas.addEventListener('click', (e) => {
     if (itemEscolhido) {
         // Tenta colocar no inventário ou dar upgrade pelo GameSystem
         sistemaArmas.buyItem(itemEscolhido);
-        
-        menuLevelUpAtivo = false; 
+
+        menuLevelUpAtivo = false;
         console.log(`Escolheu: ${itemEscolhido.name}`);
     }
 });
@@ -243,15 +243,15 @@ function controlarTiros(deltaTime) {
     let centroPy = player.y + player.h / 2;
 
     disparosFeitos.forEach(tiro => {
-if (tiro.target || tiro.shootBehavior === 'orbit') {
-            
+        if (tiro.target || tiro.shootBehavior === 'orbit') {
+
             let anguloAlvo = 0; // O ângulo base começa em zero para a adaga
-            
+
             // Só calcula a mira se houver um inimigo de verdade
             if (tiro.target) {
                 let dx = tiro.target.x - centroPx;
                 let dy = tiro.target.y - centroPy;
-                anguloAlvo = Math.atan2(dy, dx); 
+                anguloAlvo = Math.atan2(dy, dx);
             }
 
             // Encontra a arma que disparou para pegar a imagem dela
@@ -262,7 +262,7 @@ if (tiro.target || tiro.shootBehavior === 'orbit') {
                     armaDoTiro.imgObjeto.src = armaDoTiro.imgSrc;
                 }
                 // Guarda a arma na lista para ela piscar no ecrã
-// Só guarda o efeito se a arma NÃO tiver a tag hideEffect
+                // Só guarda o efeito se a arma NÃO tiver a tag hideEffect
                 if (!armaDoTiro.hideEffect) {
                     efeitosArmas.push({
                         img: armaDoTiro.imgObjeto,
@@ -289,13 +289,13 @@ if (tiro.target || tiro.shootBehavior === 'orbit') {
                     angulo: anguloAlvo, img: tiro.bulletImgObjeto,
                     type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
                     tempoVida: 2000, w: 36, h: 36, // Dimensões da bala no ecrã
-                    frameX: 0, 
+                    frameX: 0,
                     frameTimer: 0
                 });
-            } 
+            }
             // ESTILO 2: Cone / Espingarda espalhada (KS-23)
             else if (tiro.shootBehavior === 'cone') {
-                for(let i = -1; i <= 1; i++) {
+                for (let i = -1; i <= 1; i++) {
                     let spread = anguloAlvo + (i * 0.25); // Abre o ângulo para os lados
                     tirosNaTela.push({
                         x: centroPx, y: centroPy,
@@ -307,7 +307,7 @@ if (tiro.target || tiro.shootBehavior === 'orbit') {
                     });
                 }
             }
-           else if (tiro.shootBehavior === 'boomerang') {
+            else if (tiro.shootBehavior === 'boomerang') {
                 let alcance = armaDoTiro.throwRange || 250;
                 let tempoTotal = armaDoTiro.throwTime || 1200;
                 let velGiro = armaDoTiro.spinSpeed || 20;
@@ -323,9 +323,9 @@ if (tiro.target || tiro.shootBehavior === 'orbit') {
                     rotacaoAtual: 0,
                     faseRetorno: false, // Controla se está indo ou voltando
                     img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType, 
+                    type: tiro.projectileType,
                     shootBehavior: 'boomerang',
-                    damage: tiro.damage, 
+                    damage: tiro.damage,
                     isCritical: tiro.isCritical,
                     w: 64, h: 64, // Quadrado ajuda no giro centralizado
                     inimigosAtingidosIda: [], // Quem apanhou na ida
@@ -334,50 +334,60 @@ if (tiro.target || tiro.shootBehavior === 'orbit') {
             }
             // ESTILO 4: Escudo Orbital Giratório (Adaga)
             else if (tiro.shootBehavior === 'orbit') {
-                let raio = armaDoTiro.orbitRadius || 90;
-                let velGiro = armaDoTiro.spinSpeed || 4;
+                let raio = armaDoTiro.orbitRadius || 60; // Já ajustado para nascer mais perto
+                let velGiro = tiro.spinSpeed || armaDoTiro.spinSpeed || 4
                 let tempoDuracao = armaDoTiro.orbitDuration || 3000;
-                
 
-                tirosNaTela.push({
-                    x: centroPx, 
-                    y: centroPy,
-                    anguloOrbita: -Math.PI / 2, // Começa apontando para cima (12 horas)
-                    distanciaBase: raio,
-                    velocidadeOrbita: velGiro,
-                    tempoVidaTotal: tempoDuracao, 
-                    tempoVida: tempoDuracao,
-                    angulo: 0, 
-                    img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType, 
-                    shootBehavior: 'orbit',
-                    damage: tiro.damage, 
-                    isCritical: tiro.isCritical,
-                    w: 48, h: 16, 
-                    orbitando: true,
-                    inimigosAtingidos: []
-                });
+                // Puxa a quantidade de adagas do level da arma (se não tiver, é 1)
+                let quantidade = tiro.projectileCount || 1;
+
+                // Divide um círculo perfeito (360 graus) pela quantidade de adagas
+                // Assim elas ficam perfeitamente distribuídas!
+                let espacamento = (Math.PI * 2) / quantidade;
+
+                // Cria uma adaga para cada número no projectileCount
+                for (let i = 0; i < quantidade; i++) {
+                    tirosNaTela.push({
+                        x: centroPx,
+                        y: centroPy,
+                        // Cada adaga nasce com o espaçamento somado para não nascerem coladas
+                        anguloOrbita: (-Math.PI / 2) + (espacamento * i),
+                        distanciaBase: raio,
+                        velocidadeOrbita: velGiro,
+                        tempoVidaTotal: tempoDuracao,
+                        tempoVida: tempoDuracao,
+                        angulo: 0,
+                        img: tiro.bulletImgObjeto,
+                        type: tiro.projectileType,
+                        shootBehavior: 'orbit',
+                        damage: tiro.damage,
+                        isCritical: tiro.isCritical,
+                        w: 48, h: 16,
+                        orbitando: true,
+                        inimigosAtingidos: []
+                    });
+                }
             }
         }
     });
 
     // 2. Movimentação e Atualização Física das Balas
     tirosNaTela.forEach(tiro => {
-if (tiro.shootBehavior === 'orbit') {
+        if (tiro.shootBehavior === 'orbit') {
             let centroPx = player.x + player.w / 2;
             let centroPy = player.y + player.h / 2;
 
             // Gira no sentido horário continuamente
             tiro.anguloOrbita += tiro.velocidadeOrbita * (deltaTime / 1000);
-            
+
             // A imagem da adaga aponta para fora como a sawblade
-            tiro.angulo = tiro.anguloOrbita; 
+            tiro.angulo = tiro.anguloOrbita;
 
             // Mantém a distância perfeita do jogador
             tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * tiro.distanciaBase;
             tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * tiro.distanciaBase;
-            
-        }else {
+
+        } else {
             // Balas normais seguem em linha reta multiplicadas pelo tempo real (deltaTime)
             tiro.x += tiro.vx * (deltaTime / 1000);
             tiro.y += tiro.vy * (deltaTime / 1000);
@@ -404,15 +414,15 @@ if (tiro.shootBehavior === 'orbit') {
             if (tempoPassado < metadeTempo) {
                 // FASE 1: IDA (Afastando do player na direção do alvo)
                 tiro.faseRetorno = false;
-                let progressoIda = tempoPassado / metadeTempo; 
-                
+                let progressoIda = tempoPassado / metadeTempo;
+
                 tiro.x = tiro.startX + Math.cos(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
                 tiro.y = tiro.startY + Math.sin(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
             } else {
                 // FASE 2: VOLTA (Perseguindo a posição atual do player)
                 tiro.faseRetorno = true;
                 let progressoVolta = (tempoPassado - metadeTempo) / metadeTempo;
-                
+
                 // Descobre onde foi o limite máximo que o sabre chegou
                 let pontoMaximoX = tiro.startX + Math.cos(tiro.anguloDisparo) * tiro.alcanceMaximo;
                 let pontoMaximoY = tiro.startY + Math.sin(tiro.anguloDisparo) * tiro.alcanceMaximo;
@@ -421,7 +431,8 @@ if (tiro.shootBehavior === 'orbit') {
                 tiro.x = pontoMaximoX + (centroPx - pontoMaximoX) * progressoVolta;
                 tiro.y = pontoMaximoY + (centroPy - pontoMaximoY) * progressoVolta;
             }
-    }});
+        }
+    });
 
     // 3. Filtra e apaga projéteis que expiraram o tempo de vida
     tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
@@ -433,23 +444,23 @@ function desenharTiros() {
             des.save();
             des.translate(tiro.x, tiro.y);
             des.rotate(tiro.angulo);
-            
+
             // --- NOVO: Se for o FOGUETE, usa o sistema de SpriteSheet Animada ---
             if (tiro.type === 'big_boom' && typeof imgFogueteAnimado !== 'undefined' && imgFogueteAnimado.complete) {
                 let larguraQuadro = imgFogueteAnimado.width / 5;
                 let alturaQuadro = imgFogueteAnimado.height;
-                
+
                 des.drawImage(
-                    imgFogueteAnimado, 
-                    tiro.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro, 
+                    imgFogueteAnimado,
+                    tiro.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
                     -20, -10, 40, 20 // Posição -20, -10 para centralizar o tamanho 40x20
                 );
-            } 
+            }
             // --- Para todas as outras balas (P320, MP5, Adaga, etc) ---
             else {
                 des.drawImage(tiro.img, -tiro.w / 2, -tiro.h / 2, tiro.w, tiro.h);
             }
-            
+
             des.restore();
         } else {
             des.beginPath();
@@ -480,18 +491,18 @@ function verificarColisaoTiros() {
                 if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang' || tiro.shootBehavior === 'orbit') {
                     // Escolhe a lista dependendo se o sabre está indo ou voltando
                     let listaAtingidos;
-                    
-                   if (tiro.shootBehavior === 'boomerang') {
-                    // Boomerang usa listas separadas para a IDA e para a VOLTA
-                    listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
-                } else {
-                    // Adaga Orbital usa uma lista única
-                    if (!tiro.inimigosAtingidos) tiro.inimigosAtingidos = [];
-                    listaAtingidos = tiro.inimigosAtingidos;
-                }
-                
-                if (listaAtingidos.includes(inimigo)) continue;
-                listaAtingidos.push(inimigo);
+
+                    if (tiro.shootBehavior === 'boomerang') {
+                        // Boomerang usa listas separadas para a IDA e para a VOLTA
+                        listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
+                    } else {
+                        // Adaga Orbital usa uma lista única
+                        if (!tiro.inimigosAtingidos) tiro.inimigosAtingidos = [];
+                        listaAtingidos = tiro.inimigosAtingidos;
+                    }
+
+                    if (listaAtingidos.includes(inimigo)) continue;
+                    listaAtingidos.push(inimigo);
                 }
                 tiroColidiu = true;
 
@@ -506,7 +517,7 @@ function verificarColisaoTiros() {
                         let vitimaArea = inimigos[k];
                         let cVitimaX = vitimaArea.x + vitimaArea.w / 2;
                         let cVitimaY = vitimaArea.y + vitimaArea.h / 2;
-                        
+
                         // Distância entre o ponto da explosão e o outro inimigo
                         let ex = tiro.x - cVitimaX;
                         let ey = tiro.y - cVitimaY;
@@ -517,7 +528,7 @@ function verificarColisaoTiros() {
                             vitimaArea.tomarDano(tiro.damage);
                         }
                     }
-                } 
+                }
                 // COMPORTAMENTO DAS OUTRAS BALAS NORMAIS (P320, MP5, etc.)
                 else {
                     inimigo.tomarDano(tiro.damage);
@@ -557,13 +568,13 @@ function desenharEfeitosArmas() {
             des.translate(centroPx, centroPy);
             // Gira a arma para apontar para o inimigo
             des.rotate(ef.angulo);
-            
+
             // Impede a arma de ficar de cabeça para baixo se atirar para trás
-            let atirandoParaEsquerda = (ef.angulo > Math.PI/2 && ef.angulo < 3*Math.PI/2) || (ef.angulo < -Math.PI/2);
+            let atirandoParaEsquerda = (ef.angulo > Math.PI / 2 && ef.angulo < 3 * Math.PI / 2) || (ef.angulo < -Math.PI / 2);
             if (atirandoParaEsquerda) {
                 des.scale(1, -1);
             }
-            
+
             // Desenha a arma afastada 15 pixels do corpo ( Largura = 32, Altura = 16 )
             des.drawImage(ef.img, 15, -(ef.h / 2), ef.w * 2, ef.h * 2);
             des.restore();
@@ -584,12 +595,12 @@ let descansoAtivo = false;   // Controla os segundos de paz entre as waves
 const contextoDoJogo = {
     jogadores: [player],
     temDoisJogadores: false,
-    barraXP: { 
-        adicionarXP: (qtd) => { 
+    barraXP: {
+        adicionarXP: (qtd) => {
             sistemaArmas.gainXp(qtd); // <--- Corrigido de adicionarXP para gainXp
-        } 
+        }
     },
-    removerInimigo: function(inimigoMorto) {
+    removerInimigo: function (inimigoMorto) {
         inimigos = inimigos.filter(ini => ini !== inimigoMorto);
         inimigosVivos--;
         verificarFimDaWave();
@@ -600,10 +611,10 @@ const contextoDoJogo = {
 function iniciarWave() {
     console.log(`=== INICIANDO WAVE ${waveAtual} ===`);
     descansoAtivo = false;
-    
+
     // Configura a quantidade: Wave 1 = 5, Wave 2 = 10, Wave 3 = 15...
-    let quantidadeNestaWave = 5 * waveAtual; 
-    
+    let quantidadeNestaWave = 5 * waveAtual;
+
     inimigosParaSpawnar = quantidadeNestaWave;
     inimigosVivos = quantidadeNestaWave;
 }
@@ -614,7 +625,7 @@ function verificarFimDaWave() {
         console.log(`Wave ${waveAtual} concluída! Próxima em 3 segundos...`);
         waveAtual++;
         descansoAtivo = true;
-        
+
         // 3 segundos de descanso antes da próxima horda
         setTimeout(iniciarWave, 3000);
     }
@@ -622,7 +633,7 @@ function verificarFimDaWave() {
 
 // ----------------------- SPAWN DE INIMIGOS -----------------------
 function spawnarInimigo() {
-    let spawnX, spawnY; 
+    let spawnX, spawnY;
     if (Math.random() < 0.5) {
         spawnX = Math.random() * canvas.width;
         spawnY = Math.random() < 0.5 ? -50 : canvas.height + 50;
@@ -631,39 +642,39 @@ function spawnarInimigo() {
         spawnY = Math.random() * canvas.height;
     }
 
-    let configInimigo = { 
-        nome: "Praga do Café", 
-        velocidade: 2 + (Math.random() * 0.5), 
-        vida: 10, 
-        dano: 1, 
-        xp: 5 
+    let configInimigo = {
+        nome: "Praga do Café",
+        velocidade: 2 + (Math.random() * 0.5),
+        vida: 10,
+        dano: 1,
+        xp: 5
     };
 
-    let larguraInimigo = 40; 
-    let alturaInimigo = 40;  
+    let larguraInimigo = 40;
+    let alturaInimigo = 40;
     let imagemInimigo = "";  // Deixe vazio por enquanto para ver o quadrado vermelho 
 
     let novoInimigo = new Inimigo(
-        spawnX, 
-        spawnY, 
-        larguraInimigo, 
-        alturaInimigo, 
-        imagemInimigo, 
-        configInimigo, 
+        spawnX,
+        spawnY,
+        larguraInimigo,
+        alturaInimigo,
+        imagemInimigo,
+        configInimigo,
         contextoDoJogo
     );
-    
+
     inimigos.push(novoInimigo);
 }
 
 function desenharInventarioVisual() {
     // Dimensões ideais para a barra manter a proporção pixel-art sem esticar muito
-    let largBarra = 320; 
+    let largBarra = 320;
     let altBarra = 64;
-    
+
     // Centraliza horizontalmente na tela e coloca um pouco abaixo da barra de XP
     let posX = (canvas.width - largBarra) / 2;
-    let posY = canvas.height - 75; 
+    let posY = canvas.height - 75;
 
     // 1. Desenha o fundo do inventário (A imagem barra_item.png)
     if (imgBarraInventario.complete) {
@@ -678,7 +689,7 @@ function desenharInventarioVisual() {
     // 2. RENDEREZAR ARMAS (Máximo 3 slots - Lado Esquerdo)
     // O tamanho estimado de cada quadrado na proporção da barra é ~54px de largura
     let tamanhoIcone = 64;
-    let espacamentoSlot = 53; 
+    let espacamentoSlot = 53;
     let margemEsquerdaArmas = posX + 8; // Ajuste fino para alinhar dentro do primeiro quadrado
 
     for (let i = 0; i < sistemaArmas.maxWeaponSlots; i++) {
@@ -688,7 +699,7 @@ function desenharInventarioVisual() {
         // Se o jogador já possuir uma arma nesse slot, desenha a informação
         if (sistemaArmas.weapons[i]) {
             let arma = sistemaArmas.weapons[i];
-            
+
 
             // Criamos ou reaproveitamos um objeto Image para a arma
             if (!arma.imgObjeto) {
@@ -711,7 +722,7 @@ function desenharInventarioVisual() {
     }
 
     // 3. RENDERIZAR IMAGENS DOS ITENS PASSIVOS (Lado Direito)
-    let margemEsquerdaItens = posX + 202; 
+    let margemEsquerdaItens = posX + 202;
 
     for (let i = 0; i < sistemaArmas.maxItemSlots; i++) {
         let slotX = margemEsquerdaItens + (i * espacamentoSlot);
@@ -757,7 +768,7 @@ function desenharBarraXP() {
     // 2. Calcula a proporção matemática do XP atual contra a meta necessária
     let proporcaoXp = sistemaArmas.currentXp / sistemaArmas.xpNeeded;
     if (proporcaoXp > 1) proporcaoXp = 1; // Trava em 100% para não vazar a tela
-    
+
     // Deixamos uma margem de 2 pixels nas bordas para o preenchimento não cobrir a moldura da imagem
     let larguraPreenchimento = (larguraTotal - 4) * proporcaoXp;
 
@@ -771,9 +782,9 @@ function desenharBarraXP() {
     des.fillStyle = "#ffffff";
     des.font = "bold 13px Arial";
     des.textAlign = "right";
-    
+
     let textoXP = `LV. ${sistemaArmas.level}  |  ${sistemaArmas.currentXp} / ${sistemaArmas.xpNeeded} XP`;
-    
+
     // Contorno preto no texto
     des.strokeStyle = "#000000";
     des.lineWidth = 3;
@@ -795,7 +806,7 @@ function desenha() {
     }
     player.des_player();
     player.desenharBarraVida(des);
-   desenharEfeitosArmas();
+    desenharEfeitosArmas();
     desenharTiros();
 
     // Desenha todos os inimigos vivos na tela ---
@@ -807,7 +818,7 @@ function desenha() {
     desenharInventarioVisual();
     if (menuLevelUpAtivo) {
         // O deltaTime aqui serve apenas para rodar a animação dos itens subindo
-        atualizarEdesenharMenuLevelUp(16); 
+        atualizarEdesenharMenuLevelUp(16);
     }
 }
 
@@ -823,9 +834,9 @@ function atualiza(deltaTime) {
     player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
     controlarPlayers()
 
-    controlarTiros(deltaTime); 
+    controlarTiros(deltaTime);
     atualizarEfeitosArmas(deltaTime);
-    
+
     //davi
     // Atualiza a inteligência e movimento dos inimigos 
 

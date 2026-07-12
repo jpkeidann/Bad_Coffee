@@ -3,15 +3,18 @@ const catalogoGlobal = [
     { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 40 },
     { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png", effectW: 70, effectH: 35 },
     { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 30 },
-    
+
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
-    { id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png", hideEffect: true, 
-      throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
-      throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
-      spinSpeed: 20     // Velocidade do giro da lâmina
+    {
+        id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png", hideEffect: true,
+        throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
+        throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
+        spinSpeed: 20     // Velocidade do giro da lâmina
     },
-{ id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true, 
-    orbitRadius: 90, spinSpeed: 4, orbitDuration: 3000 },
+    {
+        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true,
+        orbitRadius: 50, spinSpeed: 4, orbitDuration: 3000
+    },
     { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/TiroGjahllahorn.png", effectW: 90, effectH: 45 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
@@ -64,6 +67,7 @@ class GameSystem {
     }
 
     // Função que gerencia o inventário ao clicar em uma carta
+// Função que gerencia o inventário ao clicar em uma carta
     buyItem(chosenItem) {
         let isWeapon = chosenItem.type === 'weapon';
         let targetArray = isWeapon ? this.weapons : this.items;
@@ -71,12 +75,42 @@ class GameSystem {
 
         // Verifica se o item já existe no inventário
         let existing = targetArray.find(item => item.id === chosenItem.id);
-
+        
         if (existing) {
             if (existing.level < existing.maxLevel) {
                 existing.level++;
-                // Aplica a melhora real nos atributos da arma/item
-              
+                
+                // === AQUI ACONTECE A MAGIA DO UPGRADE! ===
+                if (chosenItem.type === 'weapon') {
+                    if (existing.id === 'p320') {
+                        existing.damage += 5; 
+                        existing.cooldown -= 50;
+                    } else if (existing.id === 'ks_23') {
+                        existing.damage += 12;
+                    } else if (existing.id === 'mp5') {
+                        existing.damage += 1; 
+                        existing.cooldown -= 25;
+                    } else if (existing.id === 'lightsaber') {
+                        existing.damage += 15; 
+                        existing.cooldown -= 75; 
+                        existing.projectileSpeed += 100;
+                    } else if (existing.id === 'gjallahorn') {
+                        existing.damage += 20; 
+                        existing.cooldown -= 125; 
+                        existing.projectileSpeed += 150;
+                    } else if (existing.id === 'dagger') {
+                        // Upgrade da Adaga!
+                        existing.damage += 7;
+                        existing.cooldown -= 60;
+                        existing.projectileSpeed += 150;
+                        existing.projectileCount = (existing.projectileCount || 1) + 1; // +1 Adaga!
+                        existing.spinSpeed = (existing.spinSpeed || 4) + 1.5; // Gira mais rápido!
+                    }
+                } else if (chosenItem.type === 'passive') {
+                    this.executePassiveBuff(existing.id);
+                }
+                // ==========================================
+
                 return true; // Sucesso
             }
             return false; // Nível Máximo alcançado
@@ -119,7 +153,7 @@ class GameSystem {
             weapon.timer += deltaTime;
 
             if (weapon.timer >= weapon.cooldown) {
-                weapon.timer = 0;
+
 
                 // --- NOVO: CÁLCULO DE CRÍTICO ---
                 let isCrit = Math.random() < this.critChance;
@@ -128,9 +162,9 @@ class GameSystem {
                     finalDamage = Math.floor(finalDamage * this.critMultiplier);
                 }
 
-if (weapon.timer >= weapon.cooldown) {
                 let targetEnemy = null;
-           
+
+
                 // 1. O 'orbit' já não está nesta lista, por isso não procura inimigos!
                 if (['sequence', 'cone', 'boomerang'].includes(weapon.shootBehavior)) {
                     targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
@@ -139,18 +173,22 @@ if (weapon.timer >= weapon.cooldown) {
                 // 2. A arma atira se tiver um inimigo alvo, OU se for a Adaga ('orbit')
                 if (targetEnemy || weapon.shootBehavior === 'orbit') {
                     weapon.timer = 0;
-                }}
 
-                weaponsThatFired.push({
-                    id: weapon.id,
-                    projectileType: weapon.projectileType,
-                    projectileSpeed: weapon.projectileSpeed,
-                    damage: finalDamage,
-                    isCritical: isCrit,
-                    target: targetEnemy,
-                    shootBehavior: weapon.shootBehavior,
-                    bulletImgSrc: weapon.bulletImgSrc
-                });
+
+
+                    weaponsThatFired.push({
+                        id: weapon.id,
+                        projectileType: weapon.projectileType,
+                        projectileSpeed: weapon.projectileSpeed,
+                        damage: finalDamage,
+                        isCritical: isCrit,
+                        target: targetEnemy,
+                        shootBehavior: weapon.shootBehavior,
+                        bulletImgSrc: weapon.bulletImgSrc,
+                        projectileCount: weapon.projectileCount,
+                        spinSpeed: weapon.spinSpeed
+                    });
+                }
             }
         });
 
@@ -177,50 +215,9 @@ if (weapon.timer >= weapon.cooldown) {
         return closestEnemy;
     }
 
-    applyChoice(chosenItem) {
-        const inventory = chosenItem.type === 'weapon' ? this.weapons : this.items;
-        const existing = inventory.find(i => i.id === chosenItem.id);
-
-        if (!existing) {
-            const newItem = { ...chosenItem, level: 1, timer: 0 };
-            inventory.push(newItem);
-
-            if (chosenItem.type === 'passive') {
-                this.executePassiveBuff(chosenItem.id);
-            }
-            return;
-        }
-
-        existing.level++;
-
-        if (chosenItem.type === 'weapon') {
-            if (existing.id === 'p320') {
-                existing.damage += 5;
-                existing.cooldown -= 50;
-            } else if (existing.id === 'ks_23') {
-                existing.damage += 12;
-            } else if (existing.id === 'mp5') {
-                existing.damage += 1;
-                existing.cooldown -= 25;
-            } else if (existing.id === 'lightsaber') {
-                existing.damage += 15;
-                existing.cooldown -= 75;
-                existing.projectileSpeed += 100;
-            } else if (existing.id === 'gjallahorn') {
-                existing.damage += 20;
-                existing.cooldown -= 125;
-                existing.projectileSpeed += 150;
-            } else if (existing.id === 'dagger') {
-                existing.damage += 7;
-                existing.cooldown -= 60;
-                existing.projectileSpeed += 150;
-            }
-        } else if (chosenItem.type === 'passive') {
-            this.executePassiveBuff(existing.id);
-        }
-    }
-
+   
     executePassiveBuff(id) {
+        // 1. Atualiza a matemática interna do Sistema de Jogo
         if (id === 'seringa') {
             this.baseMoveSpeedMultiplier += 0.05;
         } else if (id === 'armadura') {
@@ -229,6 +226,26 @@ if (weapon.timer >= weapon.cooldown) {
             this.baseRegen += 1;
         } else if (id === 'casca') {
             this.baseMaxHealth += 25;
+        }
+
+        // --- NOVO: AVISAR O JOGADOR SOBRE OS BUFFS ---
+        // 2. Sincroniza os atributos do Sistema com os atributos físicos do Player
+        if (typeof player !== 'undefined') {
+            // A velocidade base do Café é 6. Multiplicamos pelo bônus.
+            player.speed = 6 * this.baseMoveSpeedMultiplier;
+
+            // Passa a armadura e a regeneração diretamente para o jogador
+            player.armadura = this.baseArmor;
+            player.regen = this.baseRegen;
+
+            // Se a Casca aumentou a vida máxima, precisamos curar o jogador nesse exato valor
+            // Para que ele não sinta que levou dano ao aumentar o teto da vida
+            let diferencaVida = this.baseMaxHealth - player.vidaMaxima;
+            player.vidaMaxima = this.baseMaxHealth;
+
+            if (diferencaVida > 0) {
+                player.vidaAtual += diferencaVida;
+            }
         }
     }
 }
