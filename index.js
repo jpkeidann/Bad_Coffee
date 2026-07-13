@@ -191,6 +191,7 @@ canvas.addEventListener('click', (e) => {
         console.log(`Escolheu: ${itemEscolhido.name}`);
     }
 });
+
 // ============= PLAYER =============
 // -joão
 

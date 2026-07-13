@@ -1,21 +1,21 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/P320.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 40 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../img/armas/mp5.png", bulletImgSrc: "../img/bala.png", effectW: 70, effectH: 35 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../img/armas/kS-23.png", bulletImgSrc: "../img/bala.png", effectW: 80, effectH: 30 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 80, effectH: 40 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 70, effectH: 35 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 80, effectH: 30 },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
-        id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../img/armas/lightsaber.png", bulletImgSrc: "../img/armas/lightsaber.png", hideEffect: true,
+        id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../Img/armas/lightsaber.png", bulletImgSrc: "../Img/armas/lightsaber.png", hideEffect: true,
         throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
         spinSpeed: 20     // Velocidade do giro da lâmina
     },
     {
-        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../img/armas/adaga.png", bulletImgSrc: "../img/armas/adaga.png", hideEffect: true,
-        orbitRadius: 50, spinSpeed: 4, orbitDuration: 3000
+        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
+        orbitRadius: 110, spinSpeed: 2, orbitDuration: 3100
     },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../img/armas/gjhallahorn.png", bulletImgSrc: "../img/TiroGjahllahorn.png", effectW: 90, effectH: 45 },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 90, effectH: 45 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
@@ -32,7 +32,7 @@ class GameSystem {
         this.baseRegen = 1; // Alterado para 0              
         this.baseMoveSpeedMultiplier = 1.0;
 
-        // --- NOVO: SISTEMA DE DANO CRÍTICO ---
+        // -- SISTEMA DE DANO CRÍTICO ---
         this.critChance = 0.05;      // 5% de chance de dar crítico
         this.critMultiplier = 1.5;   // Multiplicador de dano , Crítico dá 150% do dano
 
@@ -67,7 +67,6 @@ class GameSystem {
     }
 
     // Função que gerencia o inventário ao clicar em uma carta
-// Função que gerencia o inventário ao clicar em uma carta
     buyItem(chosenItem) {
         let isWeapon = chosenItem.type === 'weapon';
         let targetArray = isWeapon ? this.weapons : this.items;
@@ -155,7 +154,7 @@ class GameSystem {
             if (weapon.timer >= weapon.cooldown) {
 
 
-                // --- NOVO: CÁLCULO DE CRÍTICO ---
+                // --- CÁLCULO DE CRÍTICO ---
                 let isCrit = Math.random() < this.critChance;
                 let finalDamage = weapon.damage;
                 if (isCrit) {
@@ -228,7 +227,7 @@ class GameSystem {
             this.baseMaxHealth += 25;
         }
 
-        // --- NOVO: AVISAR O JOGADOR SOBRE OS BUFFS ---
+        // --- AVISAR O JOGADOR SOBRE OS BUFFS ---
         // 2. Sincroniza os atributos do Sistema com os atributos físicos do Player
         if (typeof player !== 'undefined') {
             // A velocidade base do Café é 6. Multiplicamos pelo bônus.
