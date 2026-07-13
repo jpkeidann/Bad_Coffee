@@ -128,27 +128,43 @@ class Inimigo {
     }
 
     definirAlvoMaisProximo() {
-        let jogadores = this.jogo.jogadores;
-        if (jogadores.length === 0) {
-            this.alvo = null;
-            return;
-        }
-
-        let menorDistancia = Infinity;
-        let jogadorMaisPerto = null;
-
-        for (let jogador of jogadores) {
-            let dx = jogador.x - this.x;
-            let dy = jogador.y - this.y;
-            let distancia = Math.sqrt(dx * dx + dy * dy);
-
-            if (distancia < menorDistancia) {
-                menorDistancia = distancia;
-                jogadorMaisPerto = jogador;
-            }
-        }
-        this.alvo = jogadorMaisPerto;  
+    let jogadores = [];
+    
+    // Verifica o Jogador 1
+    if (typeof player !== 'undefined' && player.vidaAtual > 0) {
+        jogadores.push(player);
     }
+    
+    // CORREÇÃO: Verifica se o Jogador 2 está ativo no modo 2 jogadores e vivo
+    if (typeof estadoJogo !== 'undefined' && estadoJogo === 'JOGANDO_2P') {
+        if (typeof player2 !== 'undefined' && player2.vidaAtual > 0) {
+            jogadores.push(player2);
+        }
+    }
+
+    if (jogadores.length === 0) {
+        this.alvo = null;
+        return;
+    }
+
+    let menorDistancia = Infinity;
+    let jogadorMaisPerto = null;
+
+    // Descobre qual jogador está mais perto do inimigo
+    for (let jogador of jogadores) {
+        let dx = jogador.x - this.x;
+        let dy = jogador.y - this.y;
+        let distancia = Math.sqrt(dx * dx + dy * dy);
+
+        if (distancia < menorDistancia) {
+            menorDistancia = distancia;
+            jogadorMaisPerto = jogador;
+        }
+    }
+
+    // Define o alvo correto (pode ser o Player 1 ou Player 2)
+    this.alvo = jogadorMaisPerto;
+}
 
     tomarDano(quantidade) {
         this.vidaAtual -= quantidade;

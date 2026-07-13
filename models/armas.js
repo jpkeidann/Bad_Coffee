@@ -145,7 +145,6 @@ class GameSystem {
         return shuffled.slice(0, 3);
     }
 
-    // AGORA RECEBE UM ARRAY DE JOGADORES ATIVOS
     updateWeapons(deltaTime, jogadoresAtivos, enemiesList) {
         let weaponsThatFired = [];
 

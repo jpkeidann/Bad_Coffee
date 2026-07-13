@@ -182,7 +182,7 @@ function atualizarEdesenharMenuLevelUp(deltaTime) {
 
     let centroX = canvas.width / 2;
     let centroY = canvas.height / 2;
-    let tamXicara = 240;
+    let tamXicara = 140;
 
     let alvoY = centroY - 120;
     animacaoXicaraTimer += deltaTime / 1000;
@@ -243,9 +243,9 @@ function desenharBotaoSelecao(item) {
         des.fillText(item.dados.description, 0, 45);
     } else {
         des.fillStyle = "#e74c3c";
-        des.fillText(`⚔️ Dano: ${item.dados.damage}`, 0, 45);
+        des.fillText(`Dano: ${item.dados.damage}`, 0, 45);
         des.fillStyle = "#3498db";
-        des.fillText(`⚡ Recarga: ${item.dados.cooldown}ms`, 0, 62);
+        des.fillText(`Recarga: ${item.dados.cooldown}ms`, 0, 62);
     }
 
     des.restore();
@@ -953,13 +953,9 @@ function desenha() {
 
 
     if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
-        if (teclasP2.ArrowUp) player2.y -= player2.speed;
-        if (teclasP2.ArrowDown) player2.y += player2.speed;
-        if (teclasP2.ArrowLeft) player2.x -= player2.speed;
-        if (teclasP2.ArrowRight) player2.x += player2.speed;
+
 
         player2.des_player(); // Desenha o jogador 2
-        player2.des_player();
         player2.desenharBarraVida(des);
         desenharEfeitosArmas();
         desenharTiros();
@@ -991,7 +987,12 @@ function atualiza(deltaTime, disparosFeitos = []) {
 
     controlarTiros(deltaTime, disparosFeitos);
     atualizarEfeitosArmas(deltaTime);
-
+    if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
+        if (teclasP2.ArrowUp) player2.y -= player2.speed;
+        if (teclasP2.ArrowDown) player2.y += player2.speed;
+        if (teclasP2.ArrowLeft) player2.x -= player2.speed;
+        if (teclasP2.ArrowRight) player2.x += player2.speed;
+    }
     //davi
     // Atualiza a inteligência e movimento dos inimigos 
 
@@ -1045,17 +1046,20 @@ function main(tempoAtual) {
 
     des.clearRect(0, 0, canvas.width, canvas.height)
 
-    let jogadoresAtivos = [player]; // O Player 1 está sempre jogando
+    let jogadoresAtivos = [player];
 
     // Se clicou em 2 Jogadores E o Jogador 2 estiver vivo, processa ele!
     if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
         jogadoresAtivos.push(player2);
 
-        // Movimentação do Jogador 2 pelas Setas
-        if (teclasP2.ArrowUp) player2.y -= player2.speed;
-        if (teclasP2.ArrowDown) player2.y += player2.speed;
-        if (teclasP2.ArrowLeft) player2.x -= player2.speed;
-        if (teclasP2.ArrowRight) player2.x += player2.speed;
+        // CORREÇÃO: Só move se o menu de level up NÃO estiver ativo (deixa ele travado)
+        if (!menuLevelUpAtivo.ativo) {
+            // CORREÇÃO VELOCIDADE: Multiplicado por (deltaTime / 1000) para não ficar super rápido
+            if (teclasP2.ArrowUp) player2.y -= player2.speed * (deltaTime / 1000);
+            if (teclasP2.ArrowDown) player2.y += player2.speed * (deltaTime / 1000);
+            if (teclasP2.ArrowLeft) player2.x -= player2.speed * (deltaTime / 1000);
+            if (teclasP2.ArrowRight) player2.x += player2.speed * (deltaTime / 1000);
+        }
 
         // Limites de tela para o Jogador 2
         if (player2.x < 0) player2.x = 0;
@@ -1064,14 +1068,14 @@ function main(tempoAtual) {
         if (player2.y + player2.h > canvas.height) player2.y = canvas.height - player2.h;
 
         // Desenha o Jogador 2 na tela
-        player2.des_player();
+
     }
 
     // Passa a lista de jogadores ativos para o sistema de armas automático
     let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, jogadoresAtivos, inimigos);
-
+    
     desenha()
-    atualiza(deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
+    atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main)
 }
