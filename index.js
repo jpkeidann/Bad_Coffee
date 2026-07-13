@@ -20,6 +20,42 @@ des.webkitImageSmoothingEnabled = false;
 des.mozImageSmoothingEnabled = false;
 
 let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
+let player2 = new Player(300, 200, 64, 64, "../Img/bad_coffee2.png")
+player2.hitbox = { x: 4, y: 4, w: 56, h: 56 };
+
+let teclasP2 = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+window.addEventListener('keydown', (e) => {
+    if (teclasP2.hasOwnProperty(e.code)) teclasP2[e.code] = true;
+});
+window.addEventListener('keyup', (e) => {
+    if (teclasP2.hasOwnProperty(e.code)) teclasP2[e.code] = false;
+});
+
+window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+window.addEventListener('click', (e) => {
+    if (estadoJogo === 'MENU') {
+        botoesMenu.forEach(botao => {
+            if (mouseX >= botao.x && mouseX <= botao.x + botao.w &&
+                mouseY >= botao.y && mouseY <= botao.y + botao.h) {
+
+                if (botao.id === '1P') {
+                    estadoJogo = 'JOGANDO_1P';
+                } else if (botao.id === '2P') {
+                    estadoJogo = 'JOGANDO_2P';
+                } else if (botao.id === 'SOBRE') {
+                    estadoJogo = 'SOBRE';
+                }
+            }
+        });
+    } else if (estadoJogo === 'SOBRE') {
+        estadoJogo = 'MENU'; // Qualquer clique na tela Sobre volta ao Menu
+    }
+});
 
 player.hitbox = {
     x: 4,
@@ -29,6 +65,60 @@ player.hitbox = {
 };
 
 let sistemaArmas = new GameSystem() // Inicializa o cérebro das armas e itens
+
+let estadoJogo = 'MENU'; // Pode ser: 'MENU', 'JOGANDO_1P', 'JOGANDO_2P', 'SOBRE'
+
+// IMAGEM DE FUNDO (Deixe vazio por enquanto. Quando tiver a imagem, coloque o caminho aqui, ex: "../img/capa.png")
+let imagemFundoMenu = new Image();
+imagemFundoMenu.src = "";
+
+// Cores e tamanhos 
+const configMenu = {
+    corFundoPadrao: "black",
+    corBotao: "#333333",
+    corBotaoHover: "#666666", // Cor quando o rato (mouse) passa por cima
+    corTexto: "white",
+    fonteTitulo: "60px Arial",
+    fonteBotao: "30px Arial"
+};
+
+// Posição do rato para sabermos se está em cima do botão
+let mouseX = 0;
+let mouseY = 0;
+
+// Definição dos 3 Botões
+let botoesMenu = [
+    { id: '1P', texto: "Um Jogador", x: 0, y: 0, w: 400, h: 70 },
+    { id: '2P', texto: "Dois Jogadores", x: 0, y: 0, w: 400, h: 70 },
+    { id: 'SOBRE', texto: "Sobre nós / Como jogar", x: 0, y: 0, w: 400, h: 70 }
+];
+
+// Atualiza a posição do rato
+window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+// Deteta o clique nos botões
+window.addEventListener('click', (e) => {
+    if (estadoJogo === 'MENU') {
+        botoesMenu.forEach(botao => {
+            if (mouseX >= botao.x && mouseX <= botao.x + botao.w &&
+                mouseY >= botao.y && mouseY <= botao.y + botao.h) {
+
+                if (botao.id === '1P') {
+                    estadoJogo = 'JOGANDO_1P';
+                } else if (botao.id === '2P') {
+                    estadoJogo = 'JOGANDO_2P';
+                } else if (botao.id === 'SOBRE') {
+                    estadoJogo = 'SOBRE';
+                }
+            }
+        });
+    } else if (estadoJogo === 'SOBRE') {
+        estadoJogo = 'MENU';
+    }
+});
 
 // Substitua o caminho abaixo pelo local correto onde guardou a imagem da barra vazia
 const imgBarraXPVazia = new Image();
@@ -92,7 +182,7 @@ function atualizarEdesenharMenuLevelUp(deltaTime) {
 
     let centroX = canvas.width / 2;
     let centroY = canvas.height / 2;
-    let tamXicara = 120;
+    let tamXicara = 240;
 
     let alvoY = centroY - 120;
     animacaoXicaraTimer += deltaTime / 1000;
@@ -132,7 +222,7 @@ function desenharBotaoSelecao(item) {
         item.dados.imgObjeto.src = item.dados.imgSrc;
     }
     if (item.dados.imgObjeto.complete && item.dados.imgObjeto.naturalWidth !== 0) {
-        des.drawImage(item.dados.imgObjeto, -24, -65, 48, 48);
+        des.drawImage(item.dados.imgObjeto, -24, -65, item.effectW, item.effectH);
     }
 
     // Textos do Cartão
@@ -221,14 +311,14 @@ function controlarPlayers() {
     if (keys['a']) player.dirX = -1
     if (keys['d']) player.dirX = 1
 
-    // // PLAYER 2
-    // player2.dirX = 0
-    // player2.dirY = 0
+    // PLAYER 2
+    player2.dirX = 0
+    player2.dirY = 0
 
-    // if (keys['ArrowUp']) player2.dirY = -1
-    // if (keys['ArrowDown']) player2.dirY = 1
-    // if (keys['ArrowLeft']) player2.dirX = -1
-    // if (keys['ArrowRight']) player2.dirX = 1
+    if (keys['ArrowUp']) player2.dirY = -1
+    if (keys['ArrowDown']) player2.dirY = 1
+    if (keys['ArrowLeft']) player2.dirX = -1
+    if (keys['ArrowRight']) player2.dirX = 1
 }
 
 // --- ARRAYS DE CONTROLE ---
@@ -236,206 +326,200 @@ function controlarPlayers() {
 let efeitosArmas = []; // Guarda os sprites das armas que aparecem rapidamente ao atirar
 let tirosNaTela = [];
 
-function controlarTiros(deltaTime) {
-    // 1. Dispara os tiros calculados pelas armas do Abel contra os inimigos do Davi
-    let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, player, inimigos);
+function controlarTiros(deltaTime, disparosFeitos = []) {
+    if (disparosFeitos && disparosFeitos.length > 0) {
+        disparosFeitos.forEach(disparo => {
+            let centroPx = disparo.atirador.x + disparo.atirador.w / 2;
+            let centroPy = disparo.atirador.y + disparo.atirador.h / 2;
 
-    let centroPx = player.x + player.w / 2;
-    let centroPy = player.y + player.h / 2;
+            let anguloAlvo = 0;
+            let dx = 1;
+            let dy = 0;
 
-    disparosFeitos.forEach(tiro => {
-        if (tiro.target || tiro.shootBehavior === 'orbit') {
-
-            let anguloAlvo = 0; // O ângulo base começa em zero para a adaga
-
-            // Só calcula a mira se houver um inimigo de verdade
-            if (tiro.target) {
-                let dx = tiro.target.x - centroPx;
-                let dy = tiro.target.y - centroPy;
-                anguloAlvo = Math.atan2(dy, dx);
+            if (disparo.target) {
+                let eCentroX = disparo.target.x + disparo.target.w / 2;
+                let eCentroY = disparo.target.y + disparo.target.h / 2;
+                anguloAlvo = Math.atan2(eCentroY - centroPy, eCentroX - centroPx);
+                dx = Math.cos(anguloAlvo);
+                dy = Math.sin(anguloAlvo);
             }
 
-            // Encontra a arma que disparou para pegar a imagem dela
-            let armaDoTiro = sistemaArmas.weapons.find(w => w.id === tiro.id);
+            let armaDoTiro = sistemaArmas.weapons.find(w => w.id === disparo.id);
             if (armaDoTiro) {
                 if (!armaDoTiro.imgObjeto) {
                     armaDoTiro.imgObjeto = new Image();
                     armaDoTiro.imgObjeto.src = armaDoTiro.imgSrc;
                 }
-                // Guarda a arma na lista para ela piscar no ecrã
-                // Só guarda o efeito se a arma NÃO tiver a tag hideEffect
+
                 if (!armaDoTiro.hideEffect) {
                     efeitosArmas.push({
                         img: armaDoTiro.imgObjeto,
                         angulo: anguloAlvo,
-                        tempoVida: 150, // Vai aparecer por 150 milissegundos
-                        w: armaDoTiro.effectW || 64, // Pega o tamanho do catálogo (ou 64 por padrão)
-                        h: armaDoTiro.effectH || 32  // Pega a altura do catálogo (ou 32 por padrão)
+                        tempoVida: 150,
+                        w: armaDoTiro.effectW || 64,
+                        h: armaDoTiro.effectH || 32
                     });
                 }
             }
 
-            // Criamos um objeto de imagem persistente para a bala não recarregar do zero a cada frame
-            if (!tiro.bulletImgObjeto && tiro.bulletImgSrc) {
-                tiro.bulletImgObjeto = new Image();
-                tiro.bulletImgObjeto.src = tiro.bulletImgSrc;
+            let imgBala = null;
+            if (disparo.bulletImgSrc) {
+                imgBala = new Image();
+                imgBala.src = disparo.bulletImgSrc;
             }
 
-            // ESTILO 1: Tiro Sequencial / Direto (P320, MP5, Gjallahorn)
-            if (tiro.shootBehavior === 'sequence') {
+            if (disparo.shootBehavior === 'sequence') {
                 tirosNaTela.push({
-                    x: centroPx, y: centroPy,
-                    vx: Math.cos(anguloAlvo) * tiro.projectileSpeed,
-                    vy: Math.sin(anguloAlvo) * tiro.projectileSpeed,
-                    angulo: anguloAlvo, img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                    tempoVida: 2000, w: 36, h: 36, // Dimensões da bala no ecrã
+                    x: centroPx,
+                    y: centroPy,
+                    vx: dx * disparo.projectileSpeed,
+                    vy: dy * disparo.projectileSpeed,
+                    angulo: anguloAlvo,
+                    img: imgBala,
+                    type: disparo.projectileType,
+                    damage: disparo.damage,
+                    isCritical: disparo.isCritical,
+                    tempoVida: 2000,
+                    w: 36,
+                    h: 36,
                     frameX: 0,
-                    frameTimer: 0
+                    frameTimer: 0,
+                    atirador: disparo.atirador
                 });
-            }
-            // ESTILO 2: Cone / Espingarda espalhada (KS-23)
-            else if (tiro.shootBehavior === 'cone') {
+            } else if (disparo.shootBehavior === 'cone') {
                 for (let i = -1; i <= 1; i++) {
-                    let spread = anguloAlvo + (i * 0.25); // Abre o ângulo para os lados
+                    let spread = anguloAlvo + (i * 0.25);
                     tirosNaTela.push({
-                        x: centroPx, y: centroPy,
-                        vx: Math.cos(spread) * tiro.projectileSpeed,
-                        vy: Math.sin(spread) * tiro.projectileSpeed,
-                        angulo: spread, img: tiro.bulletImgObjeto,
-                        type: tiro.projectileType, damage: tiro.damage, isCritical: tiro.isCritical,
-                        tempoVida: 1500, w: 16, h: 16
+                        x: centroPx,
+                        y: centroPy,
+                        vx: Math.cos(spread) * disparo.projectileSpeed,
+                        vy: Math.sin(spread) * disparo.projectileSpeed,
+                        angulo: spread,
+                        img: imgBala,
+                        type: disparo.projectileType,
+                        damage: disparo.damage,
+                        isCritical: disparo.isCritical,
+                        tempoVida: 1500,
+                        w: 16,
+                        h: 16,
+                        atirador: disparo.atirador
                     });
                 }
-            }
-            else if (tiro.shootBehavior === 'boomerang') {
-                let alcance = armaDoTiro.throwRange || 250;
-                let tempoTotal = armaDoTiro.throwTime || 1200;
-                let velGiro = armaDoTiro.spinSpeed || 20;
+            } else if (disparo.shootBehavior === 'boomerang') {
+                let alcance = armaDoTiro?.throwRange || 250;
+                let tempoTotal = armaDoTiro?.throwTime || 1200;
+                let velGiro = armaDoTiro?.spinSpeed || 20;
 
                 tirosNaTela.push({
-                    x: centroPx, y: centroPy,
-                    startX: centroPx, startY: centroPy, // Ponto de onde saiu
-                    anguloDisparo: anguloAlvo, // Direção inicial
+                    x: centroPx,
+                    y: centroPy,
+                    startX: centroPx,
+                    startY: centroPy,
+                    anguloDisparo: anguloAlvo,
                     alcanceMaximo: alcance,
                     tempoVidaTotal: tempoTotal,
                     tempoVida: tempoTotal,
                     velocidadeGiro: velGiro,
                     rotacaoAtual: 0,
-                    faseRetorno: false, // Controla se está indo ou voltando
-                    img: tiro.bulletImgObjeto,
-                    type: tiro.projectileType,
+                    faseRetorno: false,
+                    img: imgBala,
+                    type: disparo.projectileType,
                     shootBehavior: 'boomerang',
-                    damage: tiro.damage,
-                    isCritical: tiro.isCritical,
-                    w: 64, h: 64, // Quadrado ajuda no giro centralizado
-                    inimigosAtingidosIda: [], // Quem apanhou na ida
-                    inimigosAtingidosVolta: [] // Quem apanhou na volta
+                    damage: disparo.damage,
+                    isCritical: disparo.isCritical,
+                    w: 60,
+                    h: 7,
+                    inimigosAtingidosIda: [],
+                    inimigosAtingidosVolta: [],
+                    atirador: disparo.atirador
                 });
-            }
-            // ESTILO 4: Escudo Orbital Giratório (Adaga)
-            else if (tiro.shootBehavior === 'orbit') {
-                let raio = armaDoTiro.orbitRadius || 60; // Já ajustado para nascer mais perto
-                let velGiro = tiro.spinSpeed || armaDoTiro.spinSpeed || 4
-                let tempoDuracao = armaDoTiro.orbitDuration || 3000;
-
-                // Puxa a quantidade de adagas do level da arma (se não tiver, é 1)
-                let quantidade = tiro.projectileCount || 1;
-
-                // Divide um círculo perfeito (360 graus) pela quantidade de adagas
-                // Assim elas ficam perfeitamente distribuídas!
+            } else if (disparo.shootBehavior === 'orbit') {
+                let raio = armaDoTiro?.orbitRadius || 60;
+                let velGiro = disparo.spinSpeed || armaDoTiro?.spinSpeed || 4;
+                let tempoDuracao = armaDoTiro?.orbitDuration || 3000;
+                let quantidade = disparo.projectileCount || 1;
                 let espacamento = (Math.PI * 2) / quantidade;
 
-                // Cria uma adaga para cada número no projectileCount
                 for (let i = 0; i < quantidade; i++) {
                     tirosNaTela.push({
                         x: centroPx,
                         y: centroPy,
-                        // Cada adaga nasce com o espaçamento somado para não nascerem coladas
                         anguloOrbita: (-Math.PI / 2) + (espacamento * i),
                         distanciaBase: raio,
                         velocidadeOrbita: velGiro,
                         tempoVidaTotal: tempoDuracao,
                         tempoVida: tempoDuracao,
                         angulo: 0,
-                        img: tiro.bulletImgObjeto,
-                        type: tiro.projectileType,
+                        img: imgBala,
+                        type: disparo.projectileType,
                         shootBehavior: 'orbit',
-                        damage: tiro.damage,
-                        isCritical: tiro.isCritical,
-                        w: 48, h: 16,
+                        damage: disparo.damage,
+                        isCritical: disparo.isCritical,
+                        w: 174,
+                        h: 102,
                         orbitando: true,
-                        inimigosAtingidos: []
+                        inimigosAtingidos: [],
+                        atirador: disparo.atirador
                     });
                 }
             }
-        }
-    });
+        });
+    }
 
-    // 2. Movimentação e Atualização Física das Balas
-    tirosNaTela.forEach(tiro => {
+    for (let i = tirosNaTela.length - 1; i >= 0; i--) {
+        let tiro = tirosNaTela[i];
+
         if (tiro.shootBehavior === 'orbit') {
-            let centroPx = player.x + player.w / 2;
-            let centroPy = player.y + player.h / 2;
+            let centroPx = tiro.atirador.x + tiro.atirador.w / 2;
+            let centroPy = tiro.atirador.y + tiro.atirador.h / 2;
 
-            // Gira no sentido horário continuamente
             tiro.anguloOrbita += tiro.velocidadeOrbita * (deltaTime / 1000);
-
-            // A imagem da adaga aponta para fora como a sawblade
             tiro.angulo = tiro.anguloOrbita;
 
-            // Mantém a distância perfeita do jogador
             tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * tiro.distanciaBase;
             tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * tiro.distanciaBase;
-
         } else {
-            // Balas normais seguem em linha reta multiplicadas pelo tempo real (deltaTime)
             tiro.x += tiro.vx * (deltaTime / 1000);
             tiro.y += tiro.vy * (deltaTime / 1000);
         }
+
         tiro.tempoVida -= deltaTime;
         if (tiro.type === 'big_boom') {
             tiro.frameTimer += deltaTime;
-            if (tiro.frameTimer >= 100) { // Muda de imagem a cada 100ms
-                tiro.frameX = (tiro.frameX + 1) % 5; // 5 é a quantidade de desenhos na SpriteSheet
+            if (tiro.frameTimer >= 100) {
+                tiro.frameX = (tiro.frameX + 1) % 5;
                 tiro.frameTimer = 0;
             }
         }
+
         if (tiro.shootBehavior === 'boomerang') {
-            // 1. Gira a imagem continuamente
             tiro.rotacaoAtual += tiro.velocidadeGiro * (deltaTime / 1000);
             tiro.angulo = tiro.rotacaoAtual;
 
-            // 2. Calcula em que parte da viagem o sabre está
             let tempoPassado = tiro.tempoVidaTotal - tiro.tempoVida;
             let metadeTempo = tiro.tempoVidaTotal / 2;
-            let centroPx = player.x + player.w / 2;
-            let centroPy = player.y + player.h / 2;
+            let centroPx = tiro.atirador.x + tiro.atirador.w / 2;
+            let centroPy = tiro.atirador.y + tiro.atirador.h / 2;
 
             if (tempoPassado < metadeTempo) {
-                // FASE 1: IDA (Afastando do player na direção do alvo)
                 tiro.faseRetorno = false;
                 let progressoIda = tempoPassado / metadeTempo;
 
                 tiro.x = tiro.startX + Math.cos(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
                 tiro.y = tiro.startY + Math.sin(tiro.anguloDisparo) * (tiro.alcanceMaximo * progressoIda);
             } else {
-                // FASE 2: VOLTA (Perseguindo a posição atual do player)
                 tiro.faseRetorno = true;
                 let progressoVolta = (tempoPassado - metadeTempo) / metadeTempo;
 
-                // Descobre onde foi o limite máximo que o sabre chegou
                 let pontoMaximoX = tiro.startX + Math.cos(tiro.anguloDisparo) * tiro.alcanceMaximo;
                 let pontoMaximoY = tiro.startY + Math.sin(tiro.anguloDisparo) * tiro.alcanceMaximo;
 
-                // Interpola para fazê-lo voltar para a mão do jogador
                 tiro.x = pontoMaximoX + (centroPx - pontoMaximoX) * progressoVolta;
                 tiro.y = pontoMaximoY + (centroPy - pontoMaximoY) * progressoVolta;
             }
         }
-    });
+    }
 
-    // 3. Filtra e apaga projéteis que expiraram o tempo de vida
     tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
 }
 
@@ -446,7 +530,7 @@ function desenharTiros() {
             des.translate(tiro.x, tiro.y);
             des.rotate(tiro.angulo);
 
-            // --- NOVO: Se for o FOGUETE, usa o sistema de SpriteSheet Animada ---
+            // --- Se for o FOGUETE, usa o sistema de SpriteSheet Animada ---
             if (tiro.type === 'big_boom' && typeof imgFogueteAnimado !== 'undefined' && imgFogueteAnimado.complete) {
                 let larguraQuadro = imgFogueteAnimado.width / 5;
                 let alturaQuadro = imgFogueteAnimado.height;
@@ -797,6 +881,63 @@ function desenharBarraXP() {
 
 // ============================ MAIN ===================================
 
+
+function desenharMenu() {
+    if (imagemFundoMenu.src && imagemFundoMenu.complete && imagemFundoMenu.naturalWidth !== 0) {
+        des.drawImage(imagemFundoMenu, 0, 0, canvas.width, canvas.height);
+    } else {
+        des.fillStyle = configMenu.corFundoPadrao;
+        des.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    des.fillStyle = configMenu.corTexto;
+    des.font = configMenu.fonteTitulo;
+    des.textAlign = "center";
+    des.fillText("O GRANDE CAFÉ", canvas.width / 2, 150); // Pode mudar o nome aqui!
+
+    let startY = canvas.height / 2 - 50;
+    botoesMenu.forEach((botao, index) => {
+        botao.x = canvas.width / 2 - botao.w / 2;
+        botao.y = startY + (index * (botao.h + 30));
+
+        let hover = mouseX >= botao.x && mouseX <= botao.x + botao.w &&
+            mouseY >= botao.y && mouseY <= botao.y + botao.h;
+
+        des.fillStyle = hover ? configMenu.corBotaoHover : configMenu.corBotao;
+        des.fillRect(botao.x, botao.y, botao.w, botao.h);
+
+        des.fillStyle = configMenu.corTexto;
+        des.font = configMenu.fonteBotao;
+        des.textBaseline = "middle";
+        des.fillText(botao.texto, botao.x + botao.w / 2, botao.y + botao.h / 2);
+    });
+    des.textAlign = "left"; // Reseta o texto
+    des.textBaseline = "alphabetic";
+}
+
+function desenharSobre() {
+    des.fillStyle = "black";
+    des.fillRect(0, 0, canvas.width, canvas.height);
+
+    des.fillStyle = "white";
+    des.textAlign = "center";
+
+    des.font = "50px Arial";
+    des.fillText("Sobre Nós / Como Jogar", canvas.width / 2, 100);
+
+    des.font = "30px Arial";
+    des.fillText("Desenvolvedores: João, Abel e Davi", canvas.width / 2, 250);
+    des.fillText("Jogador 1: WASD para andar.", canvas.width / 2, 330);
+    des.fillText("Jogador 2: Setas do Teclado para andar.", canvas.width / 2, 380);
+    des.fillText("Sobreviva à horda e recolha melhorias!", canvas.width / 2, 400);
+
+    des.font = "20px Arial";
+    des.fillText("(Clique em qualquer lugar para voltar)", canvas.width / 2, canvas.height - 100);
+    des.textAlign = "left";
+    des.textBaseline = "alphabetic";
+}
+
+
 function desenha() {
     if (imgBackground.complete) {
         des.drawImage(imgBackground, 0, 0, canvas.width, canvas.height);
@@ -810,6 +951,19 @@ function desenha() {
     desenharEfeitosArmas();
     desenharTiros();
 
+
+    if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
+        if (teclasP2.ArrowUp) player2.y -= player2.speed;
+        if (teclasP2.ArrowDown) player2.y += player2.speed;
+        if (teclasP2.ArrowLeft) player2.x -= player2.speed;
+        if (teclasP2.ArrowRight) player2.x += player2.speed;
+
+        player2.des_player(); // Desenha o jogador 2
+        player2.des_player();
+        player2.desenharBarraVida(des);
+        desenharEfeitosArmas();
+        desenharTiros();
+    }
     // Desenha todos os inimigos vivos na tela ---
     inimigos.forEach(inimigo => {
         inimigo.desenhar(des);
@@ -825,7 +979,7 @@ function desenha() {
 
 
 
-function atualiza(deltaTime) {
+function atualiza(deltaTime, disparosFeitos = []) {
     let limiteCima = 0;
     let limiteBaixo = canvas.height;
     let limiteEsq = 0;
@@ -835,7 +989,7 @@ function atualiza(deltaTime) {
     player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
     controlarPlayers()
 
-    controlarTiros(deltaTime);
+    controlarTiros(deltaTime, disparosFeitos);
     atualizarEfeitosArmas(deltaTime);
 
     //davi
@@ -871,6 +1025,16 @@ function atualiza(deltaTime) {
 let ultimoTempo = 0
 
 function main(tempoAtual) {
+
+    if (estadoJogo === 'MENU') {
+        desenharMenu();
+        requestAnimationFrame(main);
+        return; // Impede que os monstros comecem a andar atrás de nós!
+    } else if (estadoJogo === 'SOBRE') {
+        desenharSobre();
+        requestAnimationFrame(main);
+        return;
+    }
     // Calcula quantos milissegundos se passaram entre o frame anterior e o atual
     let deltaTime = tempoAtual - ultimoTempo;
     if (!ultimoTempo) deltaTime = 0;
@@ -881,8 +1045,33 @@ function main(tempoAtual) {
 
     des.clearRect(0, 0, canvas.width, canvas.height)
 
+    let jogadoresAtivos = [player]; // O Player 1 está sempre jogando
+
+    // Se clicou em 2 Jogadores E o Jogador 2 estiver vivo, processa ele!
+    if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
+        jogadoresAtivos.push(player2);
+
+        // Movimentação do Jogador 2 pelas Setas
+        if (teclasP2.ArrowUp) player2.y -= player2.speed;
+        if (teclasP2.ArrowDown) player2.y += player2.speed;
+        if (teclasP2.ArrowLeft) player2.x -= player2.speed;
+        if (teclasP2.ArrowRight) player2.x += player2.speed;
+
+        // Limites de tela para o Jogador 2
+        if (player2.x < 0) player2.x = 0;
+        if (player2.y < 0) player2.y = 0;
+        if (player2.x + player2.w > canvas.width) player2.x = canvas.width - player2.w;
+        if (player2.y + player2.h > canvas.height) player2.y = canvas.height - player2.h;
+
+        // Desenha o Jogador 2 na tela
+        player2.des_player();
+    }
+
+    // Passa a lista de jogadores ativos para o sistema de armas automático
+    let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, jogadoresAtivos, inimigos);
+
     desenha()
-    atualiza(deltaTime) // Envia o tempo rodado para atualizar as armas corretamente
+    atualiza(deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main)
 }
