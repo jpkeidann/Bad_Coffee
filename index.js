@@ -1,5 +1,6 @@
 let canvas = document.getElementById('des')
 let des = canvas.getContext('2d')
+const ctx = canvas.getContext("2d");
 
 function resizeCanvas() {
     canvas.width = window.innerWidth
@@ -584,50 +585,75 @@ function desenharEfeitosArmas() {
 }
 
 // ============================ INIMIGOS ===============================
-// -------------- CONFIGURAÇÃO DO SISTEMA DE WAVES ----------------
+// ==================== SISTEMA DE WAVES E INIMIGOS ====================
 let inimigos = [];
-let waveAtual = 1;
-let inimigosParaSpawnar = 0; // Quantos ainda faltam nascer nesta wave
-let inimigosVivos = 0;       // Quantos inimigos restam na tela
-let frameTimer = 0;          // Temporizador para controlar o ritmo de nascimento
-let descansoAtivo = false;   // Controla os segundos de paz entre as waves
+let waveAtual = 1;         
+let inimigosParaSpawnar = 0; 
+let inimigosVivos = 0;       
+let frameTimer = 0;          
+let descansoAtivo = false;   
+let bossAtual = null;      
 
-// Este objeto resolve os pedidos que a classe Inimigo faz 
+// Objeto ponte que conecta as ações dos inimigos ao jogo
 const contextoDoJogo = {
-    jogadores: [player],
-    temDoisJogadores: false,
+    jogadores: [player],     // Mude para [player, player2] no modo coop!
+    temDoisJogadores: false, // Mude para true quando tiver dois jogadores!
     barraXP: {
         adicionarXP: (qtd) => {
-            sistemaArmas.gainXp(qtd); // <--- Corrigido de adicionarXP para gainXp
+            if (typeof sistemaArmas !== "undefined" && sistemaArmas.gainXp) {
+                sistemaArmas.gainXp(qtd); 
+            }
         }
     },
     removerInimigo: function (inimigoMorto) {
+        // Se o inimigo que morreu for o Boss, limpamos a variável global dele
+        if (inimigoMorto === bossAtual) {
+            bossAtual = null;
+        }
         inimigos = inimigos.filter(ini => ini !== inimigoMorto);
         inimigosVivos--;
         verificarFimDaWave();
+    },
+    // Cria larvas saindo de onde o Bicho-Mineiro estiver passando
+    spawnarLarvas: function (origemX, origemY, quantidade) {
+        const configLarva = TIPOS_INIMIGOS.larva;
+        let larg = configLarva.largura || 35;
+        let alt = configLarva.altura || 20;
+
+        for (let i = 0; i < quantidade; i++) {
+            let novaLarva = new Inimigo(
+                origemX, origemY, larg, alt,
+                configLarva.img, configLarva, contextoDoJogo
+            );
+            inimigos.push(novaLarva);
+            inimigosVivos++; // Aumenta o contador para a wave não encerrar cedo
+        }
     }
 };
 
-// Lógica para preparar a quantidade de monstros da rodada
+// ------------------- CONTROLE DE FLUXO DE WAVES -------------------
 function iniciarWave() {
     console.log(`=== INICIANDO WAVE ${waveAtual} ===`);
     descansoAtivo = false;
 
-    // Configura a quantidade: Wave 1 = 5, Wave 2 = 10, Wave 3 = 15...
-    let quantidadeNestaWave = 5 * waveAtual;
-
-    inimigosParaSpawnar = quantidadeNestaWave;
-    inimigosVivos = quantidadeNestaWave;
+    // Boss nas waves 5, 10, 15...
+    if (waveAtual % 5 === 0) {
+        console.log("⚠️ ALERTA DE BOSS: A GRANDE CIGARRA APARECEU! ⚠️");
+        inimigosParaSpawnar = 0; 
+        inimigosVivos = 1;       
+        spawnarBoss();           
+    } else {
+        let quantidadeNestaWave = 5 * waveAtual;
+        inimigosParaSpawnar = quantidadeNestaWave;
+        inimigosVivos = quantidadeNestaWave;
+    }
 }
 
 function verificarFimDaWave() {
-    // Se todos morreram e nenhum outro vai nascer, avança a wave
     if (inimigosVivos <= 0 && inimigosParaSpawnar <= 0) {
         console.log(`Wave ${waveAtual} concluída! Próxima em 3 segundos...`);
         waveAtual++;
         descansoAtivo = true;
-
-        // 3 segundos de descanso antes da próxima horda
         setTimeout(iniciarWave, 3000);
     }
 }
@@ -643,31 +669,71 @@ function spawnarInimigo() {
         spawnY = Math.random() * canvas.height;
     }
 
-    // 1. Criamos uma lista com as pragas normais do catálogo (deixando o Boss de fora por enquanto)
-    const pragasDisponiveis = ["acaro", "broca", "bichoMineiro", "larva"];
-    
-    // 2. Sorteia uma das pragas da lista
+    // Larva REMOVIDA DAQUI! Só nascem Ácaro, Broca e o Bicho-Mineiro pelo mapa:
+    const pragasDisponiveis = ["acaro", "broca", "bichoMineiro"];
     const pragaSorteada = pragasDisponiveis[Math.floor(Math.random() * pragasDisponiveis.length)];
-    
-    // 3. Puxa a configuração completa (com frames, velocidade de animação e imagem certa)
     const configInimigo = TIPOS_INIMIGOS[pragaSorteada];
 
-    // Tamanho padrão do sprite em tela
-    let larguraInimigo = 45;
-    let alturaInimigo = 45;
+    // Puxa as medidas personalizadas de cada praga
+    let largura = configInimigo.largura || 45;
+    let altura = configInimigo.altura || 45;
 
-    // 4. Instancia o bicho injetando os dados reais do catálogo global
     let novoInimigo = new Inimigo(
-        spawnX,
-        spawnY,
-        larguraInimigo,
-        alturaInimigo,
-        configInimigo.img, // Passa o caminho da folha de sprites
-        configInimigo,     // Passa o objeto com frames, tempo de frame, etc.
-        contextoDoJogo
+        spawnX, spawnY, largura, altura, 
+        configInimigo.img, configInimigo, contextoDoJogo
     );
 
     inimigos.push(novoInimigo);
+}
+
+// ----------------------- SPAWN DO BOSS -----------------------
+function spawnarBoss() {
+    let spawnX = (canvas.width / 2) - 80; 
+    let spawnY = -160; 
+    const configBoss = TIPOS_INIMIGOS.cigarraBoss;
+
+    let larguraBoss = configBoss.largura || 160;
+    let alturaBoss = configBoss.altura || 160;
+
+    let novoBoss = new Inimigo(
+        spawnX, spawnY, larguraBoss, alturaBoss, 
+        configBoss.img, configBoss, contextoDoJogo
+    );
+
+    bossAtual = novoBoss;
+    inimigos.push(novoBoss);
+}
+
+// -------------------- BARRA DE VIDA DO BOSS --------------------
+function desenharBarraBoss(ctx) {
+    if (bossAtual && bossAtual.vidaAtual > 0 && inimigos.includes(bossAtual)) {
+        let larguraBarra = canvas.width * 0.6;
+        let alturaBarra = 24;
+        let x = (canvas.width - larguraBarra) / 2;
+        let y = 20;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(x, y, larguraBarra, alturaBarra);
+
+        let porcentagemVida = Math.max(0, bossAtual.vidaAtual / bossAtual.vidaMaxima);
+        ctx.fillStyle = "#b30000";
+        ctx.fillRect(x, y, larguraBarra * porcentagemVida, alturaBarra);
+
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, larguraBarra, alturaBarra);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(
+            `${bossAtual.nome.toUpperCase()} (${Math.ceil(bossAtual.vidaAtual)}/${bossAtual.vidaMaxima})`, 
+            canvas.width / 2, y + 17
+        );
+        ctx.textAlign = "left"; // Reseta o alinhamento
+    } else {
+        bossAtual = null; 
+    }
 }
 
 function desenharInventarioVisual() {
@@ -812,23 +878,10 @@ function desenha() {
     desenharEfeitosArmas();
     desenharTiros();
 
-    // ATUALIZAÇÃO DOS INIMIGOS ---
+    // Desenha todos os inimigos vivos na tela ---
     inimigos.forEach(inimigo => {
-        // Agora passamos: lista de inimigos, lista de tiros vazia [], e o deltaTime!
-        inimigo.atualizarI(inimigos, [], deltaTime);
+        inimigo.desenhar(des);
     });
-
-    // Controlador de Ritmo de Spawn ---
-    if (!descansoAtivo && inimigosParaSpawnar > 0) {
-        frameTimer += deltaTime;
-        // Spawna 1 inimigo a cada 500 milissegundos (meio segundo)
-        if (frameTimer >= 500) {
-            spawnarInimigo();
-            inimigosParaSpawnar--;
-            frameTimer = 0;
-        }
-    }
-
     // --- INTERFACE HUD (Sempre desenhada por último para ficar em cima de tudo) ---
     desenharBarraXP();
     desenharInventarioVisual();
@@ -858,9 +911,24 @@ function atualiza(deltaTime) {
 
     verificarColisaoTiros();
 
-    inimigos.forEach(inimigo => {
-        inimigo.atualizarI(inimigos);
-    });
+  inimigos.forEach(inimigo => {
+    inimigo.atualizarI(inimigos, [], deltaTime);
+});
+    
+    // Desenha a barra do Boss (se houver um Boss na tela)
+    desenharBarraBoss(des);
+
+    // Controlador de Ritmo de Spawn ---
+    if (!descansoAtivo && inimigosParaSpawnar > 0) {
+        frameTimer += deltaTime;
+        // Spawna 1 inimigo a cada 500 milissegundos (meio segundo)
+        if (frameTimer >= 500) {
+            spawnarInimigo();
+            inimigosParaSpawnar--;
+            frameTimer = 0;
+        }
+    }
+
 
     if (!descansoAtivo && inimigosParaSpawnar > 0) {
         frameTimer += deltaTime;

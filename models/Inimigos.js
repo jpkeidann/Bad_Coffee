@@ -1,10 +1,10 @@
 // ==================== CATÁLOGO DE PRAGAS ====================
 const TIPOS_INIMIGOS = {
-    acaro: { id: "acaro", nome: "Ácaro-Vermelho", velocidade: 2.5, vida: 15, dano: 5, xp: 5, knockbackResistencia: 0.1, img: "Img/acaro.png", frames: 11, tempoFrame: 70 },
-    broca: { id: "broca", nome: "Broca-do-Café", velocidade: 1.5, vida: 35, dano: 10, xp: 10, knockbackResistencia: 0.5, img: "Img/broca.png", frames: 3, tempoFrame: 150 },
-    bichoMineiro: { id: "bichoMineiro", nome: "Bicho-Mineiro", velocidade: 1.2, vida: 20, dano: 0, xp: 8, knockbackResistencia: 0.3, img: "Img/bicho_sheet.png", frames: 4, tempoFrame: 200 },
-    larva: { id: "larva", nome: "Larva Mineira", velocidade: 3.5, vida: 1, dano: 3, xp: 1, knockbackResistencia: 0, img: "Img/larva.png", frames: 4, tempoFrame: 100 },
-    cigarraBoss: { id: "boss", nome: "A Grande Cigarra", velocidade: 1.0, vida: 1500, dano: 20, xp: 500, knockbackResistencia: 1.0, img: "Img/boss_sheet.png", frames: 8, tempoFrame: 150 }
+    acaro: { id: "acaro", nome: "Ácaro-Vermelho", largura: 35, altura: 35, velocidade: 2.5, vida: 15, dano: 5, xp: 5, knockbackResistencia: 0.1, img: "Img/acaro.png", frames: 10, tempoFrame: 70 },
+    broca: { id: "broca", nome: "Broca-do-Café", largura: 55, altura: 55, velocidade: 1.5, vida: 35, dano: 10, xp: 10, knockbackResistencia: 0.5, img: "Img/broca.png", frames: 5, tempoFrame: 150 },
+    bichoMineiro: { id: "bichoMineiro", nome: "Bicho-Mineiro", largura: 125, altura: 125, velocidade: 1.2, vida: 20, dano: 0, xp: 8, knockbackResistencia: 0.3, img: "Img/bichoMineiro.png", frames: 4, tempoFrame: 200 },
+    larva: { id: "larva", nome: "Larva Mineira", largura: 35, altura: 20, velocidade: 3.5, vida: 1, dano: 3, xp: 1, knockbackResistencia: 0, img: "Img/larva.png", frames: 5, tempoFrame: 100 },
+    cigarraBoss: { id: "boss", nome: "A Grande Cigarra", largura: 160, altura: 160, velocidade: 1.0, vida: 1500, dano: 20, xp: 500, knockbackResistencia: 1.0, img: "Img/boss_sheet.png", frames: 8, tempoFrame: 150 }
 };
 
 // ==================== CLASSE INIMIGO ====================
@@ -36,34 +36,47 @@ class Inimigo {
             this.img.src = caminhoFinal; 
         }
 
-        this.hitbox = {
-            x: w * 0.1, y: h * 0.1, 
-            w: w * 0.8, h: h * 0.8  
-        };
+        this.atualizarHitbox();
 
         this.nome = configuracao.nome || "Praga Comum";
         this.velocidadeBase = configuracao.velocidade || 2;
-        this.vidaMaxima = configuracao.vida || 10;
         this.danoContato = configuracao.dano || 1;
         this.xpRecompensa = configuracao.xp || 5;
 
-        // Controle do Spritesheet
+        // Controle de Sprites e Habilidades
         this.totalFrames = configuracao.frames || 1; 
         this.frameAtual = 0;                         
         this.tempoPorFrame = configuracao.tempoFrame || 150; 
         this.timerAnimacao = 0;                      
+        this.timerHabilidade = 0; // Usado pelo Bicho-Mineiro para botar larvas
         this.viradoParaEsquerda = false;             
 
         this.knockbackResistencia = configuracao.knockbackResistencia || 0;
         this.velKnockbackX = 0;
         this.velKnockbackY = 0;
 
-        if (this.jogo && this.jogo.temDoisJogadores) {
-            this.vidaMaxima = Math.round(this.vidaMaxima * 1.7);
+        // --- SISTEMA DE ESCALA DE VIDA PARA 2 JOGADORES ---
+        let multiplicadorCoop = 1;
+        if (this.jogo && (this.jogo.temDoisJogadores || (this.jogo.jogadores && this.jogo.jogadores.length > 1))) {
+            multiplicadorCoop = 1.8; // +80% de HP no multiplayer!
         }
         
+        this.vidaMaxima = Math.round((configuracao.vida || 10) * multiplicadorCoop);
         this.vidaAtual = this.vidaMaxima;
         this.alvo = null; 
+    }
+
+    atualizarHitbox() {
+        this.hitbox = {
+            x: this.w * 0.1, y: this.h * 0.1, 
+            w: this.w * 0.8, h: this.h * 0.8  
+        };
+    }
+
+    mudarTamanho(novaLargura, novaAltura) {
+        this.w = novaLargura;
+        this.h = novaAltura;
+        this.atualizarHitbox();
     }
 
     receberKnockback(origemX, origemY, forca) {
@@ -79,14 +92,23 @@ class Inimigo {
     }
 
     atualizarI(listaInimigos, tirosInimigosNaTela, deltaTime) {
-        // Atualiza a animação dos sprites
+        // 1. Atualização dos frames da animação
         this.timerAnimacao += deltaTime;
         if (this.timerAnimacao >= this.tempoPorFrame) {
             this.timerAnimacao = 0;
             this.frameAtual = (this.frameAtual + 1) % this.totalFrames;
         }
 
-        // Aplica e reduz o Knockback
+        // 2. Habilidade do Bicho-Mineiro: Soltar larvas enquanto caminha
+        if (this.nome === "Bicho-Mineiro" && this.jogo && typeof this.jogo.spawnarLarvas === "function") {
+            this.timerHabilidade += deltaTime;
+            if (this.timerHabilidade >= 4000) { // A cada 4 segundos
+                this.timerHabilidade = 0;
+                this.jogo.spawnarLarvas(this.x, this.y, 1);
+            }
+        }
+
+        // 3. Física de Knockback e Movimento
         this.x += this.velKnockbackX;
         this.y += this.velKnockbackY;
         this.velKnockbackX *= 0.85; 
@@ -110,7 +132,7 @@ class Inimigo {
                 this.y += (dy / distancia) * this.velocidadeBase;
             }
 
-            if (this.alvo.colid(this)) {
+            if (this.alvo.colid && typeof this.alvo.colid === "function" && this.alvo.colid(this)) {
                 this.atacarAlvo(); 
                 let pEsq = this.alvo.x + this.alvo.hitbox.x; let pDir = pEsq + this.alvo.hitbox.w;
                 let pTopo = this.alvo.y + this.alvo.hitbox.y; let pBase = pTopo + this.alvo.hitbox.h;
@@ -130,7 +152,7 @@ class Inimigo {
             }
         }
 
-        // Sistema de repulsão entre inimigos para não ficarem em cima do outro
+        // 4. Repulsão entre inimigos para não empilharem
         if (listaInimigos) {
             for (let outro of listaInimigos) {
                 if (outro === this) continue; 
@@ -157,6 +179,7 @@ class Inimigo {
         if (!this.jogo || !this.jogo.jogadores || this.jogo.jogadores.length === 0) { this.alvo = null; return; }
         let menorDistancia = Infinity; let jogadorMaisPerto = null;
         for (let jogador of this.jogo.jogadores) {
+            if (!jogador) continue;
             let dx = jogador.x - this.x; let dy = jogador.y - this.y;
             let distancia = Math.sqrt(dx * dx + dy * dy);
             if (distancia < menorDistancia) { menorDistancia = distancia; jogadorMaisPerto = jogador; }
@@ -214,7 +237,7 @@ class Inimigo {
 
             contexto.restore(); 
         } else {
-            // Bloco visual de emergência se a foto falhar
+            // Bloco de emergência caso a imagem não carregue
             contexto.fillStyle = this.nome === "A Grande Cigarra" ? "purple" : "red";
             contexto.fillRect(this.x, this.y, this.w, this.h);
         }
