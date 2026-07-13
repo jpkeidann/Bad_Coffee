@@ -643,25 +643,27 @@ function spawnarInimigo() {
         spawnY = Math.random() * canvas.height;
     }
 
-    let configInimigo = {
-        nome: "Praga do Café",
-        velocidade: 2 + (Math.random() * 0.5),
-        vida: 10,
-        dano: 1,
-        xp: 5
-    };
+    // 1. Criamos uma lista com as pragas normais do catálogo (deixando o Boss de fora por enquanto)
+    const pragasDisponiveis = ["acaro", "broca", "bichoMineiro", "larva"];
+    
+    // 2. Sorteia uma das pragas da lista
+    const pragaSorteada = pragasDisponiveis[Math.floor(Math.random() * pragasDisponiveis.length)];
+    
+    // 3. Puxa a configuração completa (com frames, velocidade de animação e imagem certa)
+    const configInimigo = TIPOS_INIMIGOS[pragaSorteada];
 
-    let larguraInimigo = 40;
-    let alturaInimigo = 40;
-    let imagemInimigo = "";  // Deixe vazio por enquanto para ver o quadrado vermelho 
+    // Tamanho padrão do sprite em tela
+    let larguraInimigo = 45;
+    let alturaInimigo = 45;
 
+    // 4. Instancia o bicho injetando os dados reais do catálogo global
     let novoInimigo = new Inimigo(
         spawnX,
         spawnY,
         larguraInimigo,
         alturaInimigo,
-        imagemInimigo,
-        configInimigo,
+        configInimigo.img, // Passa o caminho da folha de sprites
+        configInimigo,     // Passa o objeto com frames, tempo de frame, etc.
         contextoDoJogo
     );
 
@@ -810,10 +812,23 @@ function desenha() {
     desenharEfeitosArmas();
     desenharTiros();
 
-    // Desenha todos os inimigos vivos na tela ---
+    // ATUALIZAÇÃO DOS INIMIGOS ---
     inimigos.forEach(inimigo => {
-        inimigo.desenhar(des);
+        // Agora passamos: lista de inimigos, lista de tiros vazia [], e o deltaTime!
+        inimigo.atualizarI(inimigos, [], deltaTime);
     });
+
+    // Controlador de Ritmo de Spawn ---
+    if (!descansoAtivo && inimigosParaSpawnar > 0) {
+        frameTimer += deltaTime;
+        // Spawna 1 inimigo a cada 500 milissegundos (meio segundo)
+        if (frameTimer >= 500) {
+            spawnarInimigo();
+            inimigosParaSpawnar--;
+            frameTimer = 0;
+        }
+    }
+
     // --- INTERFACE HUD (Sempre desenhada por último para ficar em cima de tudo) ---
     desenharBarraXP();
     desenharInventarioVisual();
