@@ -1,21 +1,27 @@
+// - effectW / effectH: tamanho do sprite da arma exibido na mão ao atirar
+// - projectileW / projectileH: tamanho do projétil/bala desenhado na tela
+const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de armas (menu de level up)
+
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 80, effectH: 40 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 70, effectH: 35 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 80, effectH: 30 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36 },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
         id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../Img/armas/lightsaber.png", bulletImgSrc: "../Img/armas/lightsaber.png", hideEffect: true,
-        throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
+        throwRange: 500,  // Distância máxima que o sabre viaja para longe de você
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
-        spinSpeed: 20     // Velocidade do giro da lâmina
+        spinSpeed: 20,    // Velocidade do giro da lâmina
+        projectileW: 120, projectileH: 14
     },
     {
         id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
-        orbitRadius: 110, spinSpeed: 2, orbitDuration: 3100
+        orbitRadius: 150, spinSpeed: 2, orbitDuration: 3100,
+        projectileW: 87, projectileH: 51
     },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 90, effectH: 45 },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 550, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
@@ -29,7 +35,7 @@ class GameSystem {
         // --- ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
         this.baseMaxHealth = 100;
         this.baseArmor = 0;
-        this.baseRegen = 1; // Alterado para 0              
+        this.baseRegen = 1;             
         this.baseMoveSpeedMultiplier = 1.0;
 
         // -- SISTEMA DE DANO CRÍTICO ---
@@ -74,33 +80,32 @@ class GameSystem {
 
         // Verifica se o item já existe no inventário
         let existing = targetArray.find(item => item.id === chosenItem.id);
-        
+
         if (existing) {
             if (existing.level < existing.maxLevel) {
                 existing.level++;
-                
+
                 // === AQUI ACONTECE A MAGIA DO UPGRADE! ===
                 if (chosenItem.type === 'weapon') {
                     if (existing.id === 'p320') {
-                        existing.damage += 5; 
+                        existing.damage += 5;
                         existing.cooldown -= 50;
                     } else if (existing.id === 'ks_23') {
                         existing.damage += 12;
                     } else if (existing.id === 'mp5') {
-                        existing.damage += 1; 
+                        existing.damage += 1;
                         existing.cooldown -= 25;
                     } else if (existing.id === 'lightsaber') {
-                        existing.damage += 15; 
-                        existing.cooldown -= 75; 
+                        existing.damage += 15;
+                        existing.cooldown -= 75;
                         existing.projectileSpeed += 100;
                     } else if (existing.id === 'gjallahorn') {
-                        existing.damage += 20; 
-                        existing.cooldown -= 125; 
+                        existing.damage += 20;
+                        existing.cooldown -= 125;
                         existing.projectileSpeed += 150;
                     } else if (existing.id === 'dagger') {
                         // Upgrade da Adaga!
                         existing.damage += 7;
-                        existing.cooldown -= 60;
                         existing.projectileSpeed += 150;
                         existing.projectileCount = (existing.projectileCount || 1) + 1; // +1 Adaga!
                         existing.spinSpeed = (existing.spinSpeed || 4) + 1.5; // Gira mais rápido!
@@ -145,48 +150,47 @@ class GameSystem {
         return shuffled.slice(0, 3);
     }
 
-    updateWeapons(deltaTime, playerPos, enemiesList) {
+    updateWeapons(deltaTime, jogadoresAtivos, enemiesList) {
         let weaponsThatFired = [];
 
         this.weapons.forEach(weapon => {
-            weapon.timer += deltaTime;
+            weapon.timer += deltaTime; // Conta o tempo da arma UMA ÚNICA VEZ
 
             if (weapon.timer >= weapon.cooldown) {
+                let alguemAtirou = false;
 
+                // Usa a SUA variável original que veio do index.js
+                jogadoresAtivos.forEach(atirador => {
+                    let isCrit = Math.random() < this.critChance;
+                    let finalDamage = weapon.damage;
+                    if (isCrit) finalDamage = Math.floor(finalDamage * this.critMultiplier);
 
-                // --- CÁLCULO DE CRÍTICO ---
-                let isCrit = Math.random() < this.critChance;
-                let finalDamage = weapon.damage;
-                if (isCrit) {
-                    finalDamage = Math.floor(finalDamage * this.critMultiplier);
-                }
+                    let targetEnemy = null;
 
-                let targetEnemy = null;
+                    if (['sequence', 'cone', 'boomerang'].includes(weapon.shootBehavior)) {
+                        targetEnemy = this.findClosestEnemy(atirador, enemiesList);
+                    }
 
+                    if (targetEnemy || weapon.shootBehavior === 'orbit') {
+                        alguemAtirou = true;
+                        weaponsThatFired.push({
+                            atirador: atirador,
+                            id: weapon.id,
+                            projectileType: weapon.projectileType,
+                            projectileSpeed: weapon.projectileSpeed,
+                            damage: finalDamage,
+                            isCritical: isCrit,
+                            target: targetEnemy,
+                            shootBehavior: weapon.shootBehavior,
+                            bulletImgSrc: weapon.bulletImgSrc,
+                            projectileCount: weapon.projectileCount,
+                            spinSpeed: weapon.spinSpeed
+                        });
+                    }
+                });
 
-                // 1. O 'orbit' já não está nesta lista, por isso não procura inimigos!
-                if (['sequence', 'cone', 'boomerang'].includes(weapon.shootBehavior)) {
-                    targetEnemy = this.findClosestEnemy(playerPos, enemiesList);
-                }
-
-                // 2. A arma atira se tiver um inimigo alvo, OU se for a Adaga ('orbit')
-                if (targetEnemy || weapon.shootBehavior === 'orbit') {
+                if (alguemAtirou) {
                     weapon.timer = 0;
-
-
-
-                    weaponsThatFired.push({
-                        id: weapon.id,
-                        projectileType: weapon.projectileType,
-                        projectileSpeed: weapon.projectileSpeed,
-                        damage: finalDamage,
-                        isCritical: isCrit,
-                        target: targetEnemy,
-                        shootBehavior: weapon.shootBehavior,
-                        bulletImgSrc: weapon.bulletImgSrc,
-                        projectileCount: weapon.projectileCount,
-                        spinSpeed: weapon.spinSpeed
-                    });
                 }
             }
         });
@@ -214,37 +218,27 @@ class GameSystem {
         return closestEnemy;
     }
 
-   
+
     executePassiveBuff(id) {
-        // 1. Atualiza a matemática interna do Sistema de Jogo
-        if (id === 'seringa') {
-            this.baseMoveSpeedMultiplier += 0.05;
-        } else if (id === 'armadura') {
-            this.baseArmor += 4;
-        } else if (id === 'leite') {
-            this.baseRegen += 1;
-        } else if (id === 'casca') {
-            this.baseMaxHealth += 25;
-        }
+        if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05; //  funcionando só para o jogador 1
+        else if (id === 'armadura') this.baseArmor += 4; // não esta funcionando
+        else if (id === 'leite') this.baseRegen += 40; // não esta funcionando
+        else if (id === 'casca') this.baseMaxHealth += 25; //  funcionando só para o jogador 1
 
-        // --- AVISAR O JOGADOR SOBRE OS BUFFS ---
-        // 2. Sincroniza os atributos do Sistema com os atributos físicos do Player
-        if (typeof player !== 'undefined') {
-            // A velocidade base do Café é 6. Multiplicamos pelo bônus.
-            player.speed = 6 * this.baseMoveSpeedMultiplier;
+        // Aplica os buffs aos dois jogadores, se eles existirem
+        let listaJogadores = [];
+        if (typeof player !== 'undefined') listaJogadores.push(player);
+        if (typeof jogador2 !== 'undefined') listaJogadores.push(player2);
 
-            // Passa a armadura e a regeneração diretamente para o jogador
-            player.armadura = this.baseArmor;
-            player.regen = this.baseRegen;
+        listaJogadores.forEach(p => {
+            p.speed = 6 * this.baseMoveSpeedMultiplier;
+            p.armadura = this.baseArmor;
+            p.regen = this.baseRegen;
 
-            // Se a Casca aumentou a vida máxima, precisamos curar o jogador nesse exato valor
-            // Para que ele não sinta que levou dano ao aumentar o teto da vida
-            let diferencaVida = this.baseMaxHealth - player.vidaMaxima;
-            player.vidaMaxima = this.baseMaxHealth;
-
-            if (diferencaVida > 0) {
-                player.vidaAtual += diferencaVida;
-            }
-        }
+            let diferencaVida = this.baseMaxHealth - p.vidaMaxima;
+            p.vidaMaxima = this.baseMaxHealth;
+            if (diferencaVida > 0) p.vidaAtual += diferencaVida;
+        });
     }
 }
+
