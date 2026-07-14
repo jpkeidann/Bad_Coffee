@@ -1,21 +1,27 @@
+// - effectW / effectH: tamanho do sprite da arma exibido na mão ao atirar
+// - projectileW / projectileH: tamanho do projétil/bala desenhado na tela
+const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de armas (menu de level up)
+
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 96, effectH: 54 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 15 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 44, effectH: 11 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36 },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
         id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../Img/armas/lightsaber.png", bulletImgSrc: "../Img/armas/lightsaber.png", hideEffect: true,
-        throwRange: 250,  // Distância máxima que o sabre viaja para longe de você
+        throwRange: 500,  // Distância máxima que o sabre viaja para longe de você
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
-        spinSpeed: 20     // Velocidade do giro da lâmina
+        spinSpeed: 20,    // Velocidade do giro da lâmina
+        projectileW: 120, projectileH: 14
     },
     {
         id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
-        orbitRadius: 110, spinSpeed: 2, orbitDuration: 3100
+        orbitRadius: 150, spinSpeed: 2, orbitDuration: 3100,
+        projectileW: 87, projectileH: 51
     },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 350, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 53, effectH: 19 },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 550, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
@@ -29,7 +35,7 @@ class GameSystem {
         // --- ATRIBUTOS GLOBAIS DE SOBREVIVÊNCIA DO CAFÉ ---
         this.baseMaxHealth = 100;
         this.baseArmor = 0;
-        this.baseRegen = 1; // Alterado para 0              
+        this.baseRegen = 1;             
         this.baseMoveSpeedMultiplier = 1.0;
 
         // -- SISTEMA DE DANO CRÍTICO ---
@@ -100,7 +106,6 @@ class GameSystem {
                     } else if (existing.id === 'dagger') {
                         // Upgrade da Adaga!
                         existing.damage += 7;
-                        existing.cooldown -= 60;
                         existing.projectileSpeed += 150;
                         existing.projectileCount = (existing.projectileCount || 1) + 1; // +1 Adaga!
                         existing.spinSpeed = (existing.spinSpeed || 4) + 1.5; // Gira mais rápido!
@@ -215,15 +220,15 @@ class GameSystem {
 
 
     executePassiveBuff(id) {
-        if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05;
-        else if (id === 'armadura') this.baseArmor += 4;
-        else if (id === 'leite') this.baseRegen += 100;
-        else if (id === 'casca') this.baseMaxHealth += 25;
+        if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05; //  funcionando só para o jogador 1
+        else if (id === 'armadura') this.baseArmor += 4; // não esta funcionando
+        else if (id === 'leite') this.baseRegen += 40; // não esta funcionando
+        else if (id === 'casca') this.baseMaxHealth += 25; //  funcionando só para o jogador 1
 
         // Aplica os buffs aos dois jogadores, se eles existirem
         let listaJogadores = [];
         if (typeof player !== 'undefined') listaJogadores.push(player);
-        if (typeof jogador2 !== 'undefined') listaJogadores.push(jogador2);
+        if (typeof jogador2 !== 'undefined') listaJogadores.push(player2);
 
         listaJogadores.forEach(p => {
             p.speed = 6 * this.baseMoveSpeedMultiplier;
@@ -236,3 +241,4 @@ class GameSystem {
         });
     }
 }
+

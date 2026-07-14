@@ -222,7 +222,7 @@ function desenharBotaoSelecao(item) {
         item.dados.imgObjeto.src = item.dados.imgSrc;
     }
     if (item.dados.imgObjeto.complete && item.dados.imgObjeto.naturalWidth !== 0) {
-        des.drawImage(item.dados.imgObjeto, -24, -65, 45, 45);
+        des.drawImage(item.dados.imgObjeto, -tamanhoIconeEscolha / 2, -20 - tamanhoIconeEscolha, tamanhoIconeEscolha, tamanhoIconeEscolha);
     }
 
     // Textos do Cartão
@@ -381,8 +381,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                     damage: disparo.damage,
                     isCritical: disparo.isCritical,
                     tempoVida: 2000,
-                    w: 36,
-                    h: 36,
+                    w: armaDoTiro?.projectileW || 36,
+                    h: armaDoTiro?.projectileH || 36,
                     frameX: 0,
                     frameTimer: 0,
                     atirador: disparo.atirador
@@ -400,9 +400,9 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                         type: disparo.projectileType,
                         damage: disparo.damage,
                         isCritical: disparo.isCritical,
-                        tempoVida: 1500,
-                        w: 16,
-                        h: 16,
+                        tempoVida: 150,
+                        w: armaDoTiro?.projectileW || 16,
+                        h: armaDoTiro?.projectileH || 16,
                         atirador: disparo.atirador
                     });
                 }
@@ -428,8 +428,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                     shootBehavior: 'boomerang',
                     damage: disparo.damage,
                     isCritical: disparo.isCritical,
-                    w: 60,
-                    h: 7,
+                    w: armaDoTiro?.projectileW || 60,
+                    h: armaDoTiro?.projectileH || 7,
                     inimigosAtingidosIda: [],
                     inimigosAtingidosVolta: [],
                     atirador: disparo.atirador
@@ -456,8 +456,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                         shootBehavior: 'orbit',
                         damage: disparo.damage,
                         isCritical: disparo.isCritical,
-                        w: 174,
-                        h: 102,
+                        w: armaDoTiro?.projectileW || 174,
+                        h: armaDoTiro?.projectileH || 102,
                         orbitando: true,
                         inimigosAtingidos: [],
                         atirador: disparo.atirador
@@ -539,7 +539,7 @@ function desenharTiros() {
                 des.drawImage(
                     imgFogueteAnimado,
                     tiro.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
-                    -20, -10, 40, 20 // Posição -20, -10 para centralizar o tamanho 40x20
+                    -tiro.w / 2, -tiro.h / 2, tiro.w, tiro.h // Tamanho vem de projectileW/H (armas.js)
                 );
             }
             // --- Para todas as outras balas (P320, MP5, Adaga, etc) ---
