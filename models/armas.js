@@ -220,15 +220,15 @@ class GameSystem {
 
 
     executePassiveBuff(id) {
-        if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05; //  funcionando só para o jogador 1
-        else if (id === 'armadura') this.baseArmor += 4; // não esta funcionando
-        else if (id === 'leite') this.baseRegen += 40; // não esta funcionando
-        else if (id === 'casca') this.baseMaxHealth += 25; //  funcionando só para o jogador 1
+        if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05;
+        else if (id === 'armadura') this.baseArmor += 500000; 
+        else if (id === 'leite') this.baseRegen += 2; 
+        else if (id === 'casca') this.baseMaxHealth += 25; 
 
         // Aplica os buffs aos dois jogadores, se eles existirem
         let listaJogadores = [];
         if (typeof player !== 'undefined') listaJogadores.push(player);
-        if (typeof jogador2 !== 'undefined') listaJogadores.push(player2);
+        if (typeof player2 !== 'undefined') listaJogadores.push(player2);
 
         listaJogadores.forEach(p => {
             p.speed = 6 * this.baseMoveSpeedMultiplier;
@@ -241,4 +241,5 @@ class GameSystem {
         });
     }
 }
+
 
