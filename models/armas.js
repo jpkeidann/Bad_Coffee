@@ -1,6 +1,6 @@
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 96, effectH: 54},
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 96, effectH: 54 },
     { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 15 },
     { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed: 250, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 44, effectH: 11 },
 
@@ -74,28 +74,28 @@ class GameSystem {
 
         // Verifica se o item já existe no inventário
         let existing = targetArray.find(item => item.id === chosenItem.id);
-        
+
         if (existing) {
             if (existing.level < existing.maxLevel) {
                 existing.level++;
-                
+
                 // === AQUI ACONTECE A MAGIA DO UPGRADE! ===
                 if (chosenItem.type === 'weapon') {
                     if (existing.id === 'p320') {
-                        existing.damage += 5; 
+                        existing.damage += 5;
                         existing.cooldown -= 50;
                     } else if (existing.id === 'ks_23') {
                         existing.damage += 12;
                     } else if (existing.id === 'mp5') {
-                        existing.damage += 1; 
+                        existing.damage += 1;
                         existing.cooldown -= 25;
                     } else if (existing.id === 'lightsaber') {
-                        existing.damage += 15; 
-                        existing.cooldown -= 75; 
+                        existing.damage += 15;
+                        existing.cooldown -= 75;
                         existing.projectileSpeed += 100;
                     } else if (existing.id === 'gjallahorn') {
-                        existing.damage += 20; 
-                        existing.cooldown -= 125; 
+                        existing.damage += 20;
+                        existing.cooldown -= 125;
                         existing.projectileSpeed += 150;
                     } else if (existing.id === 'dagger') {
                         // Upgrade da Adaga!
@@ -149,12 +149,12 @@ class GameSystem {
         let weaponsThatFired = [];
 
         this.weapons.forEach(weapon => {
-            weapon.timer += deltaTime;
+            weapon.timer += deltaTime; // Conta o tempo da arma UMA ÚNICA VEZ
 
             if (weapon.timer >= weapon.cooldown) {
-                let alguemAtirou = false; // Só reseta o tempo se pelo menos um atirar
+                let alguemAtirou = false;
 
-                // Faz o cálculo para cada jogador vivo na tela
+                // Usa a SUA variável original que veio do index.js
                 jogadoresAtivos.forEach(atirador => {
                     let isCrit = Math.random() < this.critChance;
                     let finalDamage = weapon.damage;
@@ -162,7 +162,6 @@ class GameSystem {
 
                     let targetEnemy = null;
 
-                    // O tiro busca o inimigo mais perto de QUEM está a atirar
                     if (['sequence', 'cone', 'boomerang'].includes(weapon.shootBehavior)) {
                         targetEnemy = this.findClosestEnemy(atirador, enemiesList);
                     }
@@ -170,7 +169,7 @@ class GameSystem {
                     if (targetEnemy || weapon.shootBehavior === 'orbit') {
                         alguemAtirou = true;
                         weaponsThatFired.push({
-                            atirador: atirador, // Guarda de quem o tiro saiu!
+                            atirador: atirador,
                             id: weapon.id,
                             projectileType: weapon.projectileType,
                             projectileSpeed: weapon.projectileSpeed,
@@ -214,11 +213,11 @@ class GameSystem {
         return closestEnemy;
     }
 
-   
+
     executePassiveBuff(id) {
         if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05;
         else if (id === 'armadura') this.baseArmor += 4;
-        else if (id === 'leite') this.baseRegen += 1;
+        else if (id === 'leite') this.baseRegen += 100;
         else if (id === 'casca') this.baseMaxHealth += 25;
 
         // Aplica os buffs aos dois jogadores, se eles existirem
@@ -230,7 +229,7 @@ class GameSystem {
             p.speed = 6 * this.baseMoveSpeedMultiplier;
             p.armadura = this.baseArmor;
             p.regen = this.baseRegen;
-            
+
             let diferencaVida = this.baseMaxHealth - p.vidaMaxima;
             p.vidaMaxima = this.baseMaxHealth;
             if (diferencaVida > 0) p.vidaAtual += diferencaVida;

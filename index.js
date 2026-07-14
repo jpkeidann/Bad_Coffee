@@ -222,7 +222,7 @@ function desenharBotaoSelecao(item) {
         item.dados.imgObjeto.src = item.dados.imgSrc;
     }
     if (item.dados.imgObjeto.complete && item.dados.imgObjeto.naturalWidth !== 0) {
-        des.drawImage(item.dados.imgObjeto, -24, -65, item.effectW, item.effectH);
+        des.drawImage(item.dados.imgObjeto, -24, -65, 45, 45);
     }
 
     // Textos do Cartão
@@ -357,7 +357,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                         angulo: anguloAlvo,
                         tempoVida: 150,
                         w: armaDoTiro.effectW || 64,
-                        h: armaDoTiro.effectH || 32
+                        h: armaDoTiro.effectH || 32,
+                        atirador: disparo.atirador
                     });
                 }
             }
@@ -643,13 +644,19 @@ function atualizarEfeitosArmas(deltaTime) {
 }
 
 function desenharEfeitosArmas() {
-    let centroPx = player.x + player.w / 2;
-    let centroPy = player.y + player.h / 2;
-
     efeitosArmas.forEach(ef => {
+        
+        // 1. RESOLUÇÃO: Descobre de quem é a arma. 
+        // Ele tenta pegar o atirador/jogador do efeito. Se por acaso não achar, usa o player 1 de segurança.
+        let donoDaArma = ef.atirador || ef.jogador || player;
+
+        // 2. Calcula o centro baseado no dono correto (Jogador 1 ou Jogador 2)
+        let centroPx = donoDaArma.x + donoDaArma.w / 2;
+        let centroPy = donoDaArma.y + donoDaArma.h / 2;
+
         if (ef.img && ef.img.complete && ef.img.naturalWidth !== 0) {
             des.save();
-            // Move o eixo para o centro do jogador
+            // Move o eixo para o centro do jogador correto
             des.translate(centroPx, centroPy);
             // Gira a arma para apontar para o inimigo
             des.rotate(ef.angulo);
@@ -893,7 +900,7 @@ function desenharMenu() {
     des.fillStyle = configMenu.corTexto;
     des.font = configMenu.fonteTitulo;
     des.textAlign = "center";
-    des.fillText("O GRANDE CAFÉ", canvas.width / 2, 150); // Pode mudar o nome aqui!
+    des.fillText("Bad coffee", canvas.width / 2, 150); // Pode mudar o nome aqui!
 
     let startY = canvas.height / 2 - 50;
     botoesMenu.forEach((botao, index) => {
@@ -1067,13 +1074,26 @@ function main(tempoAtual) {
         if (player2.x + player2.w > canvas.width) player2.x = canvas.width - player2.w;
         if (player2.y + player2.h > canvas.height) player2.y = canvas.height - player2.h;
 
-        // Desenha o Jogador 2 na tela
+
 
     }
 
-    // Passa a lista de jogadores ativos para o sistema de armas automático
-    let disparosFeitos = sistemaArmas.updateWeapons(deltaTime, jogadoresAtivos, inimigos);
-    
+    //. Roda as armas passando a LISTA INTEIRA de uma só vez (resolve o erro!)
+    let disparosFeitos = [];
+    if (!menuLevelUpAtivo.ativo) {
+        disparosFeitos = sistemaArmas.updateWeapons(deltaTime, jogadoresAtivos, inimigos) || [];
+    }
+
+    // 3. Desenha os efeitos da arma EM CADA jogador corretamente
+    jogadoresAtivos.forEach(jog => {
+        sistemaArmas.weapons.forEach(weapon => {
+            let imgArma = new Image();
+            imgArma.src = weapon.imgSrc;
+            des.drawImage(imgArma, jog.x + 10, jog.y + 20, weapon.effectW, weapon.effectH);
+        });
+    });
+
+
     desenha()
     atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
