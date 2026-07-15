@@ -34,7 +34,7 @@ const TIPOS_INIMIGOS = {
         velocidade: 1.2, 
         vida: 20, 
         dano: 0, 
-        xp: 8, 
+        xp: 20, 
         knockbackResistencia: 0.3, 
         img: "../Img/bichoMineiro.png", 
         frames: 4, 
@@ -48,7 +48,7 @@ const TIPOS_INIMIGOS = {
         velocidade: 3.5, 
         vida: 1, 
         dano: 3, 
-        xp: 2, 
+        xp: 1, 
         knockbackResistencia: 0, 
         img: "../Img/larva.png", 
         frames: 5, 
@@ -59,10 +59,9 @@ const TIPOS_INIMIGOS = {
         nome: "Ninfa",  
         largura: 75, 
         altura: 50, 
-        velocidade: 3.5, 
         vida: 20, 
         dano: 10, 
-        xp: 17, 
+        xp: 16, 
         knockbackResistencia: 0, 
         img: "../Img/ninfa.png", 
         frames: 3, 
@@ -76,10 +75,10 @@ const TIPOS_INIMIGOS = {
         velocidade: 1.0, 
         vida: 1500, 
         dano: 20, 
-        xp: 500, 
+        xp: 0, 
         knockbackResistencia: 1.0, 
-        img: "../Img/boss_sheet.png", 
-        frames: 8, 
+        img: "../Img/quesadagigas.png", 
+        frames: 1, 
         tempoFrame: 150 
     }
 };
@@ -142,7 +141,12 @@ class Inimigo {
         
         this.vidaMaxima = Math.round((configuracao.vida || 10) * multiplicadorCoop);
         this.vidaAtual = this.vidaMaxima;
-        this.alvo = null; 
+        this.alvo = null;
+
+        // --- Efeito visual de "flash" ao tomar dano ---
+        this.duracaoFlashDano = 100;   // Tempo (ms) que o inimigo fica com opacidade reduzida ao levar dano. Mude aqui se precisar ajustar.
+        this.opacidadeFlashDano = 0.35; // Opacidade aplicada durante o flash (1 = normal, 0 = invisível)
+        this.timerFlashDano = 0;       // Contador interno, não mexer diretamente
 
         this.timerAtaqueBoss = 2000; 
         this.centroAlvoX = typeof canvas !== "undefined" ? canvas.width / 2 : 400;
@@ -195,6 +199,12 @@ class Inimigo {
         if (this.timerAnimacao >= this.tempoPorFrame) {
             this.timerAnimacao = 0;
             this.frameAtual = (this.frameAtual + 1) % this.totalFrames;
+        }
+
+        // Conta o tempo do flash de dano (independente do resto, funciona pra qualquer inimigo, incluindo Boss)
+        if (this.timerFlashDano > 0) {
+            this.timerFlashDano -= deltaTime;
+            if (this.timerFlashDano < 0) this.timerFlashDano = 0;
         }
 
         // Comportamento especial do Boss (Atualizado para Quesada Gigas)
@@ -376,6 +386,7 @@ class Inimigo {
 
         this.vidaAtual -= quantidade;
         this.receberKnockback(origemX, origemY, forcaKnockback);
+        this.timerFlashDano = this.duracaoFlashDano; // Ativa o flash de opacidade ao levar dano
         if (this.vidaAtual <= 0) {
             this.morrer();
         }
@@ -469,22 +480,32 @@ class Inimigo {
             let corteX = this.frameAtual * larguraFrame;
             let corteY = 0;
 
-            contexto.save(); 
+            contexto.save();
             contexto.translate(this.x + this.w / 2, this.y + this.h / 2);
 
             if (this.viradoParaEsquerda) {
                 contexto.scale(-1, 1);
             }
 
+            // Flash de dano: reduz a opacidade enquanto timerFlashDano estiver ativo
+            if (this.timerFlashDano > 0) {
+                contexto.globalAlpha = this.opacidadeFlashDano;
+            }
+
             contexto.drawImage(
-                this.img, 
-                corteX, corteY, larguraFrame, alturaFrame, 
-                -this.w / 2, -this.h / 2, this.w, this.h   
+                this.img,
+                corteX, corteY, larguraFrame, alturaFrame,
+                -this.w / 2, -this.h / 2, this.w, this.h
             );
-            contexto.restore(); 
+            contexto.restore();
         } else {
+            contexto.save();
+            if (this.timerFlashDano > 0) {
+                contexto.globalAlpha = this.opacidadeFlashDano;
+            }
             contexto.fillStyle = this.nome === "Quesada Gigas" ? "#8e44ad" : "#e74c3c"; // Atualizado!
             contexto.fillRect(this.x, this.y, this.w, this.h);
+            contexto.restore();
         }
     }
 }

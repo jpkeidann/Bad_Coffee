@@ -140,6 +140,9 @@ imgXicara.src = "../Img/xicara.png";
 const imgFogueteAnimado = new Image();
 imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
 
+const imgKaboom = new Image();
+imgKaboom.src = "../Img/kaboom.png";
+
 // ==========================================
 // 3. SISTEMA DE LEVEL UP (INTERRUPÇÃO)
 // ==========================================
@@ -303,7 +306,8 @@ function controlarPlayers() {
 // ==========================================
 // 5. SISTEMA E CONTROLE DE TIROS (ARMAS)
 // ==========================================
-let efeitosArmas = []; 
+let efeitosArmas = [];
+let explosoes = []; // Animações de explosão
 let tirosNaTela = [];
 
 function controlarTiros(deltaTime, disparosFeitos = []) {
@@ -546,7 +550,18 @@ function verificarColisaoTiros() {
             let dy = tiro.y - centroInimigoY;
             let distancia = Math.sqrt(dx * dx + dy * dy);
 
-            if (distancia < 25) {
+            // Lightsaber (type 'force'): checagem quadrada em volta da lâmina, já que ela
+            // é comprida (tiro.w) e um raio de 25px não cobria o alcance real da arma.
+            // Lado do quadrado = comprimento do projétil (armas.js -> projectileW do lightsaber).
+            let colidiu;
+            if (tiro.type === 'force') {
+                let metadeLado = tiro.w / 2;
+                colidiu = Math.abs(dx) < metadeLado && Math.abs(dy) < metadeLado;
+            } else {
+                colidiu = distancia < 25;
+            }
+
+            if (colidiu) {
                 if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang' || tiro.shootBehavior === 'orbit') {
                     let listaAtingidos;
                     if (tiro.shootBehavior === 'boomerang') {
@@ -574,6 +589,15 @@ function verificarColisaoTiros() {
                             vitimaArea.tomarDano(tiro.damage);
                         }
                     }
+
+                    // Dispara a animação de explosão 
+                    explosoes.push({
+                        x: tiro.x,
+                        y: tiro.y,
+                        frameX: 0,
+                        frameTimer: 0,
+                        tamanho: raioExplosao * 2 // cobre visualmente o raio da explosão
+                    });
                 } else {
                     inimigo.tomarDano(tiro.damage);
                 }
@@ -623,6 +647,41 @@ function desenharEfeitosArmas() {
             des.drawImage(ef.img, 15, -(ef.h / 2), ef.w * 2, ef.h * 2);
             des.restore();
         }
+    });
+}
+
+// Atualiza a animação das explosões (avança quadro a quadro e remove ao terminar)
+function atualizarExplosoes(deltaTime) {
+    const totalQuadros = 7; // kaboom.png tem 7 quadros de 32x32
+
+    for (let i = explosoes.length - 1; i >= 0; i--) {
+        let exp = explosoes[i];
+        exp.frameTimer += deltaTime;
+
+        if (exp.frameTimer >= 60) {
+            exp.frameX++;
+            exp.frameTimer = 0;
+        }
+
+        if (exp.frameX >= totalQuadros) {
+            explosoes.splice(i, 1); // Animação terminou, remove
+        }
+    }
+}
+
+function desenharExplosoes() {
+    if (!imgKaboom.complete || imgKaboom.naturalWidth === 0) return;
+
+    const totalQuadros = 7;
+    let larguraQuadro = imgKaboom.width / totalQuadros;
+    let alturaQuadro = imgKaboom.height;
+
+    explosoes.forEach(exp => {
+        des.drawImage(
+            imgKaboom,
+            exp.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
+            exp.x - exp.tamanho / 2, exp.y - exp.tamanho / 2, exp.tamanho, exp.tamanho
+        );
     });
 }
 
@@ -1045,6 +1104,7 @@ function desenha() {
         desenharEfeitosArmas();
         desenharTiros();
     }
+    desenharExplosoes();
     // Desenha todos os inimigos vivos na tela ---
     inimigos.forEach(inimigo => {
         inimigo.desenhar(des);
@@ -1104,6 +1164,7 @@ function atualiza(deltaTime,disparosFeitos = []) {
     // Atualiza a inteligência e movimento dos inimigos 
 
     verificarColisaoTiros();
+    atualizarExplosoes(deltaTime);
 
     if (timerMensagemWave > 0) {
         timerMensagemWave -= deltaTime;
