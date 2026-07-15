@@ -2,7 +2,7 @@ let estadoJogo = 'MENU';
 
 // IMAGEM DE FUNDO
 let imagemFundoMenu = new Image();
-imagemFundoMenu.src = "../img/menu.png";
+imagemFundoMenu.src = "../Img/menu.png";
 
 // Cores e tamanhos 
 const configMenu = {

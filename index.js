@@ -127,8 +127,8 @@ function atualizarEdesenharMenuLevelUp(deltaTime) {
     itemDireita.alpha = t;
 
     if (imgXicara.complete) {
-        des.drawImage(imgXicara, itemEsquerda.startX - tamXicara / 2, centroY - tamXicara / 3, tamXicara, tamXicara);
-        des.drawImage(imgXicara, itemDireita.startX - tamXicara / 2, centroY - tamXicara / 3, tamXicara, tamXicara);
+        des.drawImage(imgXicara, itemEsquerda.startX - tamXicara / 2, centroY - tamXicara / 3 + 50, tamXicara, tamXicara);
+        des.drawImage(imgXicara, itemDireita.startX - tamXicara / 2, centroY - tamXicara / 3 + 50, tamXicara, tamXicara);
     }
 
     desenharBotaoSelecao(itemEsquerda);
@@ -159,16 +159,46 @@ function desenharBotaoSelecao(item) {
     let txtInfo = item.dados.type === 'weapon' ? "ARMA" : "ITEM PASSIVO";
     des.fillText(txtInfo, 0, 22);
 
-    des.fillStyle = "#f1c40f";
     des.font = "bold 11px Arial";
 
-    if (item.dados.description) {
-        des.fillText(item.dados.description, 0, 45);
+    let yText = 45;
+    const comparativo = item.dados.comparativo;
+
+    if (comparativo && comparativo.tipo === 'novaArma') {
+        des.fillStyle = "#f1c40f";
+        des.fillText("NOVA ARMA", 0, yText);
+        yText += 15;
+        comparativo.atributos.forEach(attr => {
+            des.fillStyle = "#e74c3c";
+            des.fillText(`${attr.label}: ${attr.valor}`, 0, yText);
+            yText += 14;
+        });
+    } else if (comparativo && comparativo.tipo === 'upgradeArma') {
+        des.fillStyle = "#2ecc71";
+        des.fillText(`MELHORIA (Nv. ${comparativo.nivelAtual} -> ${comparativo.nivelAtual + 1})`, 0, yText);
+        yText += 15;
+        comparativo.mudancas.forEach(m => {
+            des.fillStyle = "#2ecc71";
+            let sinal = m.delta > 0 ? "+" : "";
+            des.fillText(`${m.label}: ${sinal}${m.delta}`, 0, yText);
+            yText += 14;
+        });
+    } else if (comparativo && comparativo.tipo === 'passivo') {
+        if (item.dados.description) {
+            des.fillStyle = "#f1c40f";
+            des.fillText(item.dados.description, 0, yText);
+            yText += 15;
+        }
+        des.fillStyle = "#3498db";
+        des.fillText(`${comparativo.label}: ${comparativo.antes} -> ${comparativo.depois}`, 0, yText);
+    } else if (item.dados.description) {
+        des.fillStyle = "#f1c40f";
+        des.fillText(item.dados.description, 0, yText);
     } else {
         des.fillStyle = "#e74c3c";
-        des.fillText(`Dano: ${item.dados.damage}`, 0, 45);
+        des.fillText(`Dano: ${item.dados.damage}`, 0, yText);
         des.fillStyle = "#3498db";
-        des.fillText(`Recarga: ${item.dados.cooldown}ms`, 0, 62);
+        des.fillText(`Recarga: ${item.dados.cooldown}ms`, 0, yText + 17);
     }
 
     des.restore();

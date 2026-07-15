@@ -4,24 +4,24 @@ const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de 
 
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 15, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 700, damage: 5, projectileSpeed: 700, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1500, damage: 30, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 10, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24 },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36 },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 12, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36 },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
-        id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 40, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../Img/armas/lightsaber.png", bulletImgSrc: "../Img/armas/lightsaber.png", hideEffect: true,
+        id: 'lightsaber', name: 'Sabre de luz', type: 'weapon', maxLevel: 5, cooldown: 3000, damage: 20, projectileSpeed: 150, projectileType: 'force', shootBehavior: 'boomerang', projectileCount: 1, imgSrc: "../Img/armas/lightsaber.png", bulletImgSrc: "../Img/armas/lightsaber.png", hideEffect: true,
         throwRange: 500,  // Distância máxima que o sabre viaja para longe de você
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
         spinSpeed: 20,    // Velocidade do giro da lâmina
         projectileW: 120, projectileH: 14
     },
     {
-        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 7, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
+        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 3, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
         orbitRadius: 150, spinSpeed: 2, orbitDuration: 3100,
         projectileW: 87, projectileH: 51
     },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 5000, damage: 60, projectileSpeed: 550, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40 },
+    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 7000, damage: 45, projectileSpeed: 550, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40 },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
@@ -147,7 +147,69 @@ class GameSystem {
         });
 
         const shuffled = [...availableChoices].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, 3);
+        const sorteados = shuffled.slice(0, 3);
+
+        // Rótulos amigáveis dos atributos de arma que podem aparecer no comparativo
+        const rotulosArma = {
+            damage: 'Dano',
+            cooldown: 'Cooldown (ms)',
+            projectileSpeed: 'Velocidade do Projétil',
+            projectileCount: 'Qtd. de Projéteis',
+            spinSpeed: 'Velocidade de Giro'
+        };
+
+        // Espelha ESTRITAMENTE os deltas de upgrade aplicados dentro de buyItem() para cada arma
+        const upgradesArma = {
+            p320: { damage: 5, cooldown: -50 },
+            ks_23: { damage: 12 },
+            mp5: { damage: 1, cooldown: -25 },
+            lightsaber: { damage: 15, cooldown: -75, projectileSpeed: 100 },
+            gjallahorn: { damage: 20, cooldown: -125, projectileSpeed: 150 },
+            dagger: { damage: 7, projectileSpeed: 150, projectileCount: 1, spinSpeed: 1.5 }
+        };
+
+        // Espelha ESTRITAMENTE os efeitos aplicados dentro de executePassiveBuff() para cada item passivo
+        const buffsPassivo = {
+            seringa: { atributo: 'baseMoveSpeedMultiplier', label: 'Velocidade', delta: 0.05 },
+            armadura: { atributo: 'baseArmor', label: 'Armadura', delta: 10 },
+            leite: { atributo: 'baseRegen', label: 'Regeneração', delta: 2 },
+            casca: { atributo: 'baseMaxHealth', label: 'Vida Máxima', delta: 25 }
+        };
+
+        // Monta o objeto "comparativo" de cada carta sorteada, pronto para a tela de escolha exibir
+        return sorteados.map(item => {
+            let comparativo;
+
+            if (item.type === 'weapon') {
+                const existente = this.weapons.find(w => w.id === item.id);
+
+                if (!existente) {
+                    // Primeira vez adquirindo: mostra os atributos base do catalogoGlobal
+                    const atributos = Object.keys(rotulosArma)
+                        .filter(chave => item[chave] !== undefined)
+                        .map(chave => ({ label: rotulosArma[chave], valor: item[chave] }));
+
+                    comparativo = { tipo: 'novaArma', atributos };
+                } else {
+                    // Upgrade de arma existente: mostra só as diferenças, iguais às de buyItem()
+                    const deltas = upgradesArma[item.id] || {};
+                    const mudancas = Object.keys(deltas).map(chave => ({
+                        label: rotulosArma[chave] || chave,
+                        delta: deltas[chave]
+                    }));
+
+                    comparativo = { tipo: 'upgradeArma', nivelAtual: existente.level, mudancas };
+                }
+            } else if (item.type === 'passive') {
+                const buff = buffsPassivo[item.id];
+                const antes = buff ? this[buff.atributo] : undefined;
+                const depois = buff ? antes + buff.delta : undefined;
+
+                comparativo = { tipo: 'passivo', label: buff ? buff.label : item.name, antes, depois };
+            }
+
+            return { ...item, comparativo };
+        });
     }
 
     updateWeapons(deltaTime, jogadoresAtivos, enemiesList) {
@@ -221,7 +283,7 @@ class GameSystem {
 
     executePassiveBuff(id) {
         if (id === 'seringa') this.baseMoveSpeedMultiplier += 0.05;
-        else if (id === 'armadura') this.baseArmor += 500000; 
+        else if (id === 'armadura') this.baseArmor += 10; 
         else if (id === 'leite') this.baseRegen += 2; 
         else if (id === 'casca') this.baseMaxHealth += 25; 
 
