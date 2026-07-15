@@ -1,6 +1,7 @@
 let canvas = document.getElementById('des')
 let des = canvas.getContext('2d')
-const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d")
+
 
 function resizeCanvas() {
     canvas.width = window.innerWidth
@@ -615,6 +616,9 @@ function desenharExplosoes() {
 // ==========================================
 // 6. GERENCIADOR DE INIMIGOS E LOGICA DE WAVES
 // ==========================================
+let faseAtual = 1;  
+let pontos = 0;
+let gameOver = false;
 let inimigos = [];
 let waveAtual = 1;         
 let inimigosParaSpawnar = 0; 
@@ -694,20 +698,24 @@ const contextoDoJogo = {
 };
 
 function iniciarWave() {
-    console.log(`=== INICIANDO WAVE ${waveAtual} ===`);
+    console.log(`=== INICIANDO FASE ${faseAtual} - WAVE ${waveAtual} ===`);
     descansoAtivo = false;
 
-    // A Wave 5 é o limite absoluto e spawnará o Quesada Gigas
-    if (waveAtual === 5) {
+    
+    if (faseAtual === 3 && waveAtual === 3) {
         textoMensagemWave = "ALERTA DE BOSS: QUESADA GIGAS!";
         timerMensagemWave = 4000; 
-        inimigosParaSpawnar = 0; 
+        inimigosParaSpawnar = 0; // Boss é spawnado manualmente, sem fila comum
         inimigosVivos = 1;       
         spawnarBoss();           
     } else {
-        textoMensagemWave = `WAVE ${waveAtual}`;
+        textoMensagemWave = `FASE ${faseAtual} - WAVE ${waveAtual}`;
         timerMensagemWave = 3500;
-        let quantidadeNestaWave = 5 * waveAtual;
+
+        
+        let numeroWaveTotal = ((faseAtual - 1) * 3) + waveAtual; 
+        let quantidadeNestaWave = 3 + (numeroWaveTotal * 2);     
+        
         inimigosParaSpawnar = quantidadeNestaWave;
         inimigosVivos = quantidadeNestaWave;
     }
@@ -715,19 +723,28 @@ function iniciarWave() {
 
 function verificarFimDaWave() {
     if (inimigosVivos <= 0 && inimigosParaSpawnar <= 0) {
-        // Se a Wave 5 for derrotada, o jogo acaba em Vitória!
-        if (waveAtual === 5) {
+        if (faseAtual === 3 && waveAtual === 3) {
             jogoVencido = true;
-            textoMensagemWave = "PARABÉNS! QUESADA GIGAS FOI DERROTADO!";
+            textoMensagemWave = "PARABÉNS!!";
             timerMensagemWave = 999999;
             return;
         }
 
-        textoMensagemWave = "WAVE CONCLUÍDA!";
-        timerMensagemWave = 2000;
-        waveAtual++;
+        // Se concluiu a Wave 3 de qualquer fase, avança de Fase e reseta as Waves para 1
+        if (waveAtual === 3) {
+            textoMensagemWave = `FASE ${faseAtual} CONCLUÍDA!`;
+            timerMensagemWave = 2500;
+            faseAtual++;
+            waveAtual = 1;
+        } else {
+            // Caso contrário, apenas avança para a próxima Wave dentro da mesma Fase
+            textoMensagemWave = "WAVE CONCLUÍDA!";
+            timerMensagemWave = 2000;
+            waveAtual++;
+        }
+
         descansoAtivo = true;
-        setTimeout(iniciarWave, 3000);
+        setTimeout(iniciarWave, 3000); // 3 segundos de descanso/preparação
     }
 }
 
@@ -816,7 +833,8 @@ function desenharBarraBoss(ctx) {
 function desenharHUDWave(contexto) {
     contexto.save();
 
-    let largCaixa = 220;
+    // Caixa do HUD adaptada para mostrar Fase e Wave
+    let largCaixa = 260;
     let altCaixa = 40;
     let xCaixa = (canvas.width / 2) - (largCaixa / 2);
     let yCaixa = 15;
@@ -829,23 +847,26 @@ function desenharHUDWave(contexto) {
     contexto.strokeRect(xCaixa, yCaixa, largCaixa, altCaixa);
 
     contexto.fillStyle = "#ffffff";
-    contexto.font = "bold 16px Arial";
+    contexto.font = "bold 14px Arial";
     contexto.textAlign = "center";
     contexto.textBaseline = "middle";
     
     let totalRestante = inimigosVivos + inimigosParaSpawnar;
-    let textoTop = `WAVE ${waveAtual}   |   Resta ${totalRestante}`;
+    let textoTop = `Fase ${faseAtual} - Wave ${waveAtual}   |   Resta: ${totalRestante}`;
     contexto.fillText(textoTop, canvas.width / 2, yCaixa + (altCaixa / 2));
 
+    // Mensagem gigante centralizada ("Fase X - Wave Y", "Alerta de Boss", etc.)
     if (timerMensagemWave > 0) {
         let alpha = Math.min(timerMensagemWave / 1000, 1);
         contexto.globalAlpha = alpha;
 
+        // Sombra projetada do texto
         contexto.fillStyle = "rgba(0, 0, 0, 0.5)";
-        contexto.font = "bold 46px Arial";
+        contexto.font = "bold 42px Arial";
         contexto.fillText(textoMensagemWave, (canvas.width / 2) + 3, (canvas.height / 3) + 3);
 
-        contexto.fillStyle = waveAtual === 5 ? "#e74c3c" : "#f1c40f"; 
+        // Cor do texto: Vermelho intimidador para o Boss, Amarelo para waves normais
+        contexto.fillStyle = (faseAtual === 3 && waveAtual === 3) ? "#e74c3c" : "#f1c40f"; 
         contexto.fillText(textoMensagemWave, canvas.width / 2, canvas.height / 3);
     }
 
