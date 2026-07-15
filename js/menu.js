@@ -1,16 +1,10 @@
-// ==========================================
-// MENU.JS — Tudo relacionado à tela de Menu e à tela "Sobre"
-// canvas, des (definidos em index.js)
-// ==========================================
-
-// Estado geral do jogo. Pode ser: 'MENU', 'JOGANDO_1P', 'JOGANDO_2P', 'SOBRE'
 let estadoJogo = 'MENU';
 
-// IMAGEM DE FUNDO (Deixe vazio por enquanto. Quando tiver a imagem, coloque o caminho aqui, ex: "../img/capa.png")
+// IMAGEM DE FUNDO
 let imagemFundoMenu = new Image();
 imagemFundoMenu.src = "";
 
-// Cores e tamanhos (fácil de alterar visual do menu aqui)
+// Cores e tamanhos 
 const configMenu = {
     corFundoPadrao: "black",
     corBotao: "#333333",
@@ -20,7 +14,7 @@ const configMenu = {
     fonteBotao: "30px Arial"
 };
 
-// Posição do rato para sabermos se está em cima do botão
+// Posição do mouse para sabermos se está em cima do botão
 let mouseX = 0;
 let mouseY = 0;
 
@@ -31,20 +25,13 @@ let botoesMenu = [
     { id: 'SOBRE', texto: "Sobre nós / Como jogar", x: 0, y: 0, w: 400, h: 70 }
 ];
 
-// Atualiza a posição do rato
-// (ANTES existiam DOIS listeners iguais a este no index.js. Isso não muda o mouseX/mouseY,
-// mas deixava o listener de click abaixo duplicado )
+// Atualiza a posição do mouse
 window.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 });
 
 // Detecta o clique nos botões do menu e na tela "Sobre"
-// CORREÇÃO BOTÃO "SOBRE": esse listener estava duplicado no index.js (registrado 2x).
-// No clique, o 1º listener mudava estadoJogo de 'MENU' para 'SOBRE', e imediatamente em
-// seguida o 2º listener (do mesmo evento de clique) via estadoJogo === 'SOBRE' e voltava
-// para 'MENU' na hora — por isso o botão "parecia" não fazer nada. Com um único listener,
-// a troca de tela funciona normalmente.
 window.addEventListener('click', (e) => {
     if (estadoJogo === 'MENU') {
         botoesMenu.forEach(botao => {
