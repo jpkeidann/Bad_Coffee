@@ -24,8 +24,8 @@ des.mozImageSmoothingEnabled = false;
 // ==========================================
 // 2. INICIALIZAÇÃO DE ATORES E IMAGENS
 // ==========================================
-let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
-let player2 = new Player(300, 200, 64, 64, "../Img/bad_coffee2.png")
+let player = new Player(960, 540, 64, 64, "../Img/bad_coffee.png")
+let player2 = new Player(960, 540, 64, 64, "../Img/bad_coffee2.png")
 player2.hitbox = { x: 4, y: 4, w: 56, h: 56 };
 
 let teclasP2 = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -57,19 +57,23 @@ const imgBarraXPVazia = new Image();
 imgBarraXPVazia.src = '../Img/2xp_bar_img.png'
 
 const imgBarraInventario = new Image();
-imgBarraInventario.src = "../Img/barra_item.png"; 
+imgBarraInventario.src = "../Img/barra_item.png";
 
 const imgBackground = new Image();
-imgBackground.src = "../Img/Background.png"; 
+imgBackground.src = "../Img/Background.png";
 
 const imgXicara = new Image();
-imgXicara.src = "../Img/xicara.png"; 
+imgXicara.src = "../Img/xicara.png";
 
 const imgFogueteAnimado = new Image();
 imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
 
 const imgKaboom = new Image();
 imgKaboom.src = "../Img/kaboom.png";
+
+// Spritesheet da transição de fade (26 quadros de 32x32), cobre a tela toda
+const imgFade = new Image();
+imgFade.src = "../Img/fade.png";
 
 // ==========================================
 // 3. SISTEMA DE LEVEL UP (INTERRUPÇÃO)
@@ -426,7 +430,7 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
         }
 
         tiro.tempoVida -= deltaTime;
-        
+
         if (tiro.type === 'big_boom') {
             tiro.frameTimer += deltaTime;
             if (tiro.frameTimer >= 100) {
@@ -559,7 +563,7 @@ function verificarColisaoTiros() {
                 } else {
                     inimigo.tomarDano(tiro.damage);
                 }
-                break; 
+                break;
             }
         }
 
@@ -582,7 +586,7 @@ function atualizarEfeitosArmas(deltaTime) {
 
 function desenharEfeitosArmas() {
     efeitosArmas.forEach(ef => {
-        
+
         // 1. RESOLUÇÃO: Descobre de quem é a arma. 
         // Ele tenta pegar o atirador/jogador do efeito. Se por acaso não achar, usa o player 1 de segurança.
         let donoDaArma = ef.atirador || ef.jogador || player;
@@ -643,32 +647,67 @@ function desenharExplosoes() {
     });
 }
 
+// Transição de tela em fade (usada na troca de FASE e do Menu para o jogo).
+let transicaoFade = { ativa: false, frameX: 0, frameTimer: 0 };
+const TOTAL_QUADROS_FADE = 13;   // fade.png tem 26 quadros de 32x32
+const DURACAO_QUADRO_FADE = 100;  // ms por quadro.
+let delayTransicaoFase = 3000;   // ms de espera (com "Fase Concluída!" na tela) antes de começar a animação de fade. Mude aqui se precisar.
+function iniciarTransicaoFade() {
+    transicaoFade.ativa = true;
+    transicaoFade.frameX = 0;
+    transicaoFade.frameTimer = 0;
+}
+
+function atualizarEdesenharTransicaoFade(deltaTime) {
+    if (!transicaoFade.ativa) return;
+
+    transicaoFade.frameTimer += deltaTime;
+    if (transicaoFade.frameTimer >= DURACAO_QUADRO_FADE) {
+        transicaoFade.frameTimer = 0;
+        transicaoFade.frameX++;
+        if (transicaoFade.frameX >= TOTAL_QUADROS_FADE) {
+            transicaoFade.ativa = false;
+            return;
+        }
+    }
+
+    if (imgFade.complete && imgFade.naturalWidth !== 0) {
+        let larguraQuadro = imgFade.naturalWidth / TOTAL_QUADROS_FADE;
+        let alturaQuadro = imgFade.naturalHeight;
+        des.drawImage(
+            imgFade,
+            transicaoFade.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
+            0, 0, canvas.width, canvas.height
+        );
+    }
+}
+
 // ==========================================
 // 6. GERENCIADOR DE INIMIGOS E LOGICA DE WAVES
 // ==========================================
-let faseAtual = 1;  
+let faseAtual = 1;
 let pontos = 0;
 let gameOver = false;
 let inimigos = [];
-let waveAtual = 1;         
-let inimigosParaSpawnar = 0; 
-let inimigosVivos = 0;       
-let frameTimer = 0;          
-let descansoAtivo = false;   
-let bossAtual = null;      
+let waveAtual = 1;
+let inimigosParaSpawnar = 0;
+let inimigosVivos = 0;
+let frameTimer = 0;
+let descansoAtivo = false;
+let bossAtual = null;
 let jogoVencido = false;     // Flag para travar o loop de jogo e mostrar vitória
 
 let textoMensagemWave = "WAVE 1 - PREPARE-SE!";
-let timerMensagemWave = 3500; 
+let timerMensagemWave = 3500;
 
 // OBJETO CENTRAL DO ESTADO DO JOGO
 const contextoDoJogo = {
-    jogadores: [player],     
-    temDoisJogadores: false, 
+    jogadores: [player],
+    temDoisJogadores: false,
     barraXP: {
         adicionarXP: (qtd) => {
             if (typeof sistemaArmas !== "undefined" && sistemaArmas.gainXp) {
-                sistemaArmas.gainXp(qtd); 
+                sistemaArmas.gainXp(qtd);
             }
         }
     },
@@ -680,27 +719,27 @@ const contextoDoJogo = {
         inimigosVivos--;
         verificarFimDaWave();
     },
-    
+
     spawnarLarvas: function (origemX, origemY, quantidade) {
         let configLarva = TIPOS_INIMIGOS.larva || { largura: 35, altura: 20, img: "../Img/larva.png" };
-        let raioDeSpawn = 90; 
-        
+        let raioDeSpawn = 90;
+
         for (let i = 0; i < quantidade; i++) {
             let angulo = (Math.PI * 2 / quantidade) * i;
             let spawnX = origemX + Math.cos(angulo) * raioDeSpawn;
             let spawnY = origemY + Math.sin(angulo) * raioDeSpawn;
 
             let novaLarva = new Inimigo(
-                spawnX, spawnY, 
+                spawnX, spawnY,
                 configLarva.largura, configLarva.altura,
                 configLarva.img, configLarva, contextoDoJogo
             );
-            
+
             novaLarva.velKnockbackX = Math.cos(angulo) * 3;
             novaLarva.velKnockbackY = Math.sin(angulo) * 3;
 
             inimigos.push(novaLarva);
-            inimigosVivos++; 
+            inimigosVivos++;
         }
     },
     spawnarNinfas: function (origemX, origemY, quantidade) {
@@ -713,16 +752,16 @@ const contextoDoJogo = {
             let spawnY = origemY + Math.sin(angulo) * raioDeSpawn;
 
             let novaNinfa = new Inimigo(
-                spawnX, spawnY, 
+                spawnX, spawnY,
                 configNinfa.largura, configNinfa.altura,
                 configNinfa.img, configNinfa, contextoDoJogo
             );
-            
+
             novaNinfa.velKnockbackX = Math.cos(angulo) * 3;
             novaNinfa.velKnockbackY = Math.sin(angulo) * 3;
 
             inimigos.push(novaNinfa);
-            inimigosVivos++; 
+            inimigosVivos++;
         }
     }
 };
@@ -731,21 +770,21 @@ function iniciarWave() {
     console.log(`=== INICIANDO FASE ${faseAtual} - WAVE ${waveAtual} ===`);
     descansoAtivo = false;
 
-    
+
     if (faseAtual === 3 && waveAtual === 3) {
         textoMensagemWave = "ALERTA DE BOSS: QUESADA GIGAS!";
-        timerMensagemWave = 4000; 
+        timerMensagemWave = 4000;
         inimigosParaSpawnar = 0; // Boss é spawnado manualmente, sem fila comum
-        inimigosVivos = 1;       
-        spawnarBoss();           
+        inimigosVivos = 1;
+        spawnarBoss();
     } else {
         textoMensagemWave = `FASE ${faseAtual} - WAVE ${waveAtual}`;
         timerMensagemWave = 3500;
 
-        
-        let numeroWaveTotal = ((faseAtual - 1) * 3) + waveAtual; 
-        let quantidadeNestaWave = 3 + (numeroWaveTotal * 2);     
-        
+
+        let numeroWaveTotal = ((faseAtual - 1) * 3) + waveAtual;
+        let quantidadeNestaWave = 3 + (numeroWaveTotal * 2);
+
         inimigosParaSpawnar = quantidadeNestaWave;
         inimigosVivos = quantidadeNestaWave;
     }
@@ -762,10 +801,12 @@ function verificarFimDaWave() {
 
         // Se concluiu a Wave 3 de qualquer fase, avança de Fase e reseta as Waves para 1
         if (waveAtual === 3) {
-            textoMensagemWave = `FASE ${faseAtual} CONCLUÍDA!`;
-            timerMensagemWave = 2500;
+            textoMensagemWave = "Fase Concluída!";
+            timerMensagemWave = delayTransicaoFase;
             faseAtual++;
             waveAtual = 1;
+            // Espera "delayTransicaoFase" ms mostrando o texto antes de iniciar a transição de tela
+            setTimeout(iniciarTransicaoFade, delayTransicaoFase);
         } else {
             // Caso contrário, apenas avança para a próxima Wave dentro da mesma Fase
             textoMensagemWave = "WAVE CONCLUÍDA!";
@@ -796,7 +837,7 @@ function spawnarInimigo() {
     let altura = configInimigo.altura || 45;
 
     let novoInimigo = new Inimigo(
-        spawnX, spawnY, largura, altura, 
+        spawnX, spawnY, largura, altura,
         configInimigo.img, configInimigo, contextoDoJogo
     );
 
@@ -809,17 +850,17 @@ function spawnarBoss() {
     let alturaBoss = configBoss.altura || 160;
 
     // Spawn centralizado
-    let spawnX = (canvas.width / 2) - (larguraBoss / 2); 
-    let spawnY = (canvas.height / 2) - (alturaBoss / 2); 
+    let spawnX = (canvas.width / 2) - (larguraBoss / 2);
+    let spawnY = (canvas.height / 2) - (alturaBoss / 2);
 
     let novoBoss = new Inimigo(
-        spawnX, spawnY, larguraBoss, alturaBoss, 
+        spawnX, spawnY, larguraBoss, alturaBoss,
         configBoss.img, configBoss, contextoDoJogo
     );
 
     novoBoss.estado = "surgindo";
     novoBoss.timerSurgimento = 0;
-    novoBoss.tempoSurgimentoTotal = 3000; 
+    novoBoss.tempoSurgimentoTotal = 3000;
     novoBoss.particulas = [];
 
     bossAtual = novoBoss;
@@ -834,7 +875,7 @@ function desenharBarraBoss(ctx) {
         let larguraBarra = canvas.width * 0.6;
         let alturaBarra = 24;
         let x = (canvas.width - larguraBarra) / 2;
-        let y = 70; 
+        let y = 70;
 
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(x, y, larguraBarra, alturaBarra);
@@ -851,12 +892,12 @@ function desenharBarraBoss(ctx) {
         ctx.font = "bold 14px Arial";
         ctx.textAlign = "center";
         ctx.fillText(
-            `${bossAtual.nome.toUpperCase()} (${Math.ceil(bossAtual.vidaAtual)}/${bossAtual.vidaMaxima})`, 
+            `${bossAtual.nome.toUpperCase()} (${Math.ceil(bossAtual.vidaAtual)}/${bossAtual.vidaMaxima})`,
             canvas.width / 2, y + 17
         );
-        ctx.textAlign = "left"; 
+        ctx.textAlign = "left";
     } else {
-        bossAtual = null; 
+        bossAtual = null;
     }
 }
 
@@ -880,7 +921,7 @@ function desenharHUDWave(contexto) {
     contexto.font = "bold 14px Arial";
     contexto.textAlign = "center";
     contexto.textBaseline = "middle";
-    
+
     let totalRestante = inimigosVivos + inimigosParaSpawnar;
     let textoTop = `Fase ${faseAtual} - Wave ${waveAtual}   |   Resta: ${totalRestante}`;
     contexto.fillText(textoTop, canvas.width / 2, yCaixa + (altCaixa / 2));
@@ -896,7 +937,7 @@ function desenharHUDWave(contexto) {
         contexto.fillText(textoMensagemWave, (canvas.width / 2) + 3, (canvas.height / 3) + 3);
 
         // Cor do texto: Vermelho intimidador para o Boss, Amarelo para waves normais
-        contexto.fillStyle = (faseAtual === 3 && waveAtual === 3) ? "#e74c3c" : "#f1c40f"; 
+        contexto.fillStyle = (faseAtual === 3 && waveAtual === 3) ? "#e74c3c" : "#f1c40f";
         contexto.fillText(textoMensagemWave, canvas.width / 2, canvas.height / 3);
     }
 
@@ -919,7 +960,7 @@ function desenharInventarioVisual() {
 
     let tamanhoIcone = 64;
     let espacamentoSlot = 53;
-    let margemEsquerdaArmas = posX + 8; 
+    let margemEsquerdaArmas = posX + 8;
 
     for (let i = 0; i < sistemaArmas.maxWeaponSlots; i++) {
         let slotX = margemEsquerdaArmas + (i * espacamentoSlot);
@@ -964,28 +1005,28 @@ function desenharInventarioVisual() {
             des.fillText(`Lvl ${item.level}`, slotX + 20, posY + 52);
         }
     }
-    des.textAlign = "left"; 
+    des.textAlign = "left";
 }
 
 function desenharBarraXP() {
-    let alturaBarra = 98; 
+    let alturaBarra = 98;
     let larguraTotal = 768;
 
     if (imgBarraXPVazia.complete) {
-        des.drawImage(imgBarraXPVazia, 550, 0, larguraTotal, alturaBarra);
+        des.drawImage(imgBarraXPVazia, (window.innerWidth / 2) - 384, 0, larguraTotal, alturaBarra);
     } else {
         des.fillStyle = "#111116";
         des.fillRect(0, 0, larguraTotal, alturaBarra);
     }
 
     let proporcaoXp = sistemaArmas.currentXp / sistemaArmas.xpNeeded;
-    if (proporcaoXp > 1) proporcaoXp = 1; 
+    if (proporcaoXp > 1) proporcaoXp = 1;
 
     let larguraPreenchimento = (larguraTotal - 4) * proporcaoXp;
 
     if (larguraPreenchimento > 0) {
-        des.fillStyle = "#2ecc71"; 
-        des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 24);
+        des.fillStyle = "#2ecc71";
+        des.fillRect((window.innerWidth / 2) - (384 + 12), 12, larguraPreenchimento, alturaBarra - 24);
     }
 
     des.fillStyle = "#ffffff";
@@ -998,11 +1039,50 @@ function desenharBarraXP() {
     des.lineWidth = 3;
     des.strokeText(textoXP, canvas.width - 20, alturaBarra + 20);
     des.fillText(textoXP, canvas.width - 20, alturaBarra + 20);
-    des.textAlign = "left"; 
+    des.textAlign = "left";
 }
 
 // ============================ MAIN ===================================
 // desenharMenu() e desenharSobre() agora vivem em menu.js
+
+// Botão "VOLTAR AO MENU" usado tanto na tela de Derrota quanto na de Vitória.
+// Reaproveita mouseX/mouseY (já calculados em menu.js) pra hover e clique.
+let botaoVoltarMenuJogo = { x: 0, y: 0, w: 260, h: 55 };
+
+function desenharBotaoVoltarMenuJogo(y) {
+    botaoVoltarMenuJogo.x = canvas.width / 2 - botaoVoltarMenuJogo.w / 2;
+    botaoVoltarMenuJogo.y = y;
+
+    let hover = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
+        mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+
+    des.fillStyle = hover ? "#555555" : "#222226";
+    des.fillRect(botaoVoltarMenuJogo.x, botaoVoltarMenuJogo.y, botaoVoltarMenuJogo.w, botaoVoltarMenuJogo.h);
+    des.strokeStyle = "white";
+    des.lineWidth = 2;
+    des.strokeRect(botaoVoltarMenuJogo.x, botaoVoltarMenuJogo.y, botaoVoltarMenuJogo.w, botaoVoltarMenuJogo.h);
+
+    des.fillStyle = "white";
+    des.font = "bold 18px Arial";
+    des.textAlign = "center";
+    des.textBaseline = "middle";
+    des.fillText("VOLTAR AO MENU", botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w / 2, botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h / 2);
+    des.textBaseline = "alphabetic";
+}
+
+// Clique no botão de Voltar ao Menu (só reage quando a tela de Derrota ou Vitória está visível).
+// Recarrega a página pra garantir que TUDO (vida, waves, fase, armas, inimigos) volte limpo,
+// do mesmo jeito que já era pedido no texto da tela de Vitória.
+window.addEventListener('click', () => {
+    if (!gameOver && !jogoVencido) return;
+
+    let dentroDoBotao = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
+        mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+
+    if (dentroDoBotao) {
+        location.reload();
+    }
+});
 
 function desenha() {
     if (imgBackground.complete) {
@@ -1011,9 +1091,12 @@ function desenha() {
         des.fillStyle = "#2c3e50";
         des.fillRect(0, 0, canvas.width, canvas.height);
     }
-    
-    player.des_player();
-    player.desenharBarraVida(des);
+
+    if (player.vidaAtual > 0) {
+        player.des_player();
+        player.desenharBarraVida(des);
+    }
+
     desenharEfeitosArmas();
     desenharTiros();
 
@@ -1045,38 +1128,64 @@ function desenha() {
     if (jogoVencido) {
         des.fillStyle = "rgba(0, 0, 0, 0.85)";
         des.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         des.fillStyle = "#f1c40f";
         des.font = "bold 52px Arial";
         des.textAlign = "center";
         des.fillText("VITÓRIA!", canvas.width / 2, canvas.height / 2 - 40);
-        
+
         des.fillStyle = "#ffffff";
         des.font = "bold 20px Arial";
         des.fillText("Você derrotou Quesada Gigas e salvou o cafezal!", canvas.width / 2, canvas.height / 2 + 20);
-        
+
         des.font = "16px Arial";
         des.fillStyle = "#bdc3c7";
         des.fillText("Recarregue a página para jogar novamente.", canvas.width / 2, canvas.height / 2 + 65);
-        des.textAlign = "left"; 
+        des.textAlign = "left";
+
+        desenharBotaoVoltarMenuJogo(canvas.height / 2 + 100);
+    }
+
+    // Tela de Derrota, mostrada quando não sobra nenhum jogador vivo
+    if (gameOver) {
+        des.fillStyle = "rgba(0, 0, 0, 0.85)";
+        des.fillRect(0, 0, canvas.width, canvas.height);
+
+        des.fillStyle = "#e74c3c";
+        des.font = "bold 52px Arial";
+        des.textAlign = "center";
+        des.fillText("VOCÊ PERDEU", canvas.width / 2, canvas.height / 2 - 40);
+
+        des.fillStyle = "#ffffff";
+        des.font = "bold 20px Arial";
+        des.fillText("O cafezal foi tomado pelas pragas...", canvas.width / 2, canvas.height / 2 + 20);
+        des.textAlign = "left";
+
+        desenharBotaoVoltarMenuJogo(canvas.height / 2 + 70);
     }
 }
 
-function atualiza(deltaTime,disparosFeitos = []) {
+function atualiza(deltaTime, disparosFeitos = []) {
     if (jogoVencido) return; // Trava o progresso do jogo se tiver vencido
+    if (gameOver) return;    // Trava o progresso do jogo se o jogador morreu
     if (menuLevelUpAtivo) return;
 
     let limiteCima = 0;
     let limiteBaixo = canvas.height;
     let limiteEsq = 0;
     let limiteDir = canvas.width;
-    
-    player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
+
     controlarPlayers();
 
-    // CORREÇÃO ITEM "LEITE": atualizarMecanicas() aplica o regen (this.regen) a cada frame.
-    // Ela já existia em player.js, mas nunca era chamada em lugar nenhum do jogo.
-    player.atualizarMecanicas(deltaTime);
+    // Só move e aplica mecânicas (regen) do Player 1 se ele ainda estiver vivo.
+    // Sem essa checagem, mesmo com vidaAtual em 0 ele continuava andando e brigando normalmente (imortal).
+    if (player.vidaAtual > 0) {
+        player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
+
+        // CORREÇÃO ITEM "LEITE": atualizarMecanicas() aplica o regen (this.regen) a cada frame.
+        // Ela já existia em player.js, mas nunca era chamada em lugar nenhum do jogo.
+        player.atualizarMecanicas(deltaTime);
+    }
 
     controlarTiros(deltaTime, disparosFeitos);
     atualizarEfeitosArmas(deltaTime);
@@ -1110,6 +1219,12 @@ function atualiza(deltaTime,disparosFeitos = []) {
             frameTimer = 0;
         }
     }
+
+    // Verifica se não sobrou nenhum jogador vivo (no 1P é só o player; no 2P precisa dos dois mortos)
+    let ninguemVivo = player.vidaAtual <= 0 && (estadoJogo !== 'JOGANDO_2P' || player2.vidaAtual <= 0);
+    if (ninguemVivo) {
+        gameOver = true;
+    }
 }
 
 let ultimoTempo = 0;
@@ -1134,7 +1249,13 @@ function main(tempoAtual) {
 
     des.clearRect(0, 0, canvas.width, canvas.height);
 
-    let jogadoresAtivos = [player];
+    // CORREÇÃO IMORTALIDADE: só entra na lista de jogadores ativos quem realmente está vivo.
+    // Antes o Player 1 entrava sempre, então mesmo com 0 de vida continuava atirando e
+    // sendo alvo válido dos inimigos (o que na prática o deixava "imortal" no modo 2P).
+    let jogadoresAtivos = [];
+    if (player.vidaAtual > 0) {
+        jogadoresAtivos.push(player);
+    }
 
     // Se clicou em 2 Jogadores E o Jogador 2 estiver vivo, processa ele!
     if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
@@ -1182,6 +1303,7 @@ function main(tempoAtual) {
 
 
     desenha()
+    atualizarEdesenharTransicaoFade(deltaTime); // Desenha o overlay de fade por cima de tudo, se estiver ativo
     atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main);
