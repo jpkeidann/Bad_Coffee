@@ -24,8 +24,8 @@ des.mozImageSmoothingEnabled = false;
 // ==========================================
 // 2. INICIALIZAÇÃO DE ATORES E IMAGENS
 // ==========================================
-let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
-let player2 = new Player(300, 200, 64, 64, "../Img/bad_coffee2.png")
+let player = new Player(960, 540, 64, 64, "../Img/bad_coffee.png")
+let player2 = new Player(960, 540, 64, 64, "../Img/bad_coffee2.png")
 player2.hitbox = { x: 4, y: 4, w: 56, h: 56 };
 
 let teclasP2 = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -70,6 +70,10 @@ imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
 
 const imgKaboom = new Image();
 imgKaboom.src = "../Img/kaboom.png";
+
+// Spritesheet da transição de fade (26 quadros de 32x32), cobre a tela toda
+const imgFade = new Image();
+imgFade.src = "../Img/fade.png";
 
 // ==========================================
 // 3. SISTEMA DE LEVEL UP (INTERRUPÇÃO)
@@ -613,6 +617,41 @@ function desenharExplosoes() {
     });
 }
 
+// Transição de tela em fade (usada na troca de FASE e do Menu para o jogo).
+let transicaoFade = { ativa: false, frameX: 0, frameTimer: 0 };
+const TOTAL_QUADROS_FADE = 13;   // fade.png tem 26 quadros de 32x32
+const DURACAO_QUADRO_FADE = 100;  // ms por quadro.
+let delayTransicaoFase = 3000;   // ms de espera (com "Fase Concluída!" na tela) antes de começar a animação de fade. Mude aqui se precisar.
+function iniciarTransicaoFade() {
+    transicaoFade.ativa = true;
+    transicaoFade.frameX = 0;
+    transicaoFade.frameTimer = 0;
+}
+
+function atualizarEdesenharTransicaoFade(deltaTime) {
+    if (!transicaoFade.ativa) return;
+
+    transicaoFade.frameTimer += deltaTime;
+    if (transicaoFade.frameTimer >= DURACAO_QUADRO_FADE) {
+        transicaoFade.frameTimer = 0;
+        transicaoFade.frameX++;
+        if (transicaoFade.frameX >= TOTAL_QUADROS_FADE) {
+            transicaoFade.ativa = false;
+            return;
+        }
+    }
+
+    if (imgFade.complete && imgFade.naturalWidth !== 0) {
+        let larguraQuadro = imgFade.naturalWidth / TOTAL_QUADROS_FADE;
+        let alturaQuadro = imgFade.naturalHeight;
+        des.drawImage(
+            imgFade,
+            transicaoFade.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
+            0, 0, canvas.width, canvas.height
+        );
+    }
+}
+
 // ==========================================
 // 6. GERENCIADOR DE INIMIGOS E LOGICA DE WAVES
 // ==========================================
@@ -732,10 +771,12 @@ function verificarFimDaWave() {
 
         // Se concluiu a Wave 3 de qualquer fase, avança de Fase e reseta as Waves para 1
         if (waveAtual === 3) {
-            textoMensagemWave = `FASE ${faseAtual} CONCLUÍDA!`;
-            timerMensagemWave = 2500;
+            textoMensagemWave = "Fase Concluída!";
+            timerMensagemWave = delayTransicaoFase;
             faseAtual++;
             waveAtual = 1;
+            // Espera "delayTransicaoFase" ms mostrando o texto antes de iniciar a transição de tela
+            setTimeout(iniciarTransicaoFade, delayTransicaoFase);
         } else {
             // Caso contrário, apenas avança para a próxima Wave dentro da mesma Fase
             textoMensagemWave = "WAVE CONCLUÍDA!";
@@ -942,7 +983,7 @@ function desenharBarraXP() {
     let larguraTotal = 768;
 
     if (imgBarraXPVazia.complete) {
-        des.drawImage(imgBarraXPVazia, 550, 0, larguraTotal, alturaBarra);
+        des.drawImage(imgBarraXPVazia, (window.innerWidth / 2 )- 384, 0, larguraTotal, alturaBarra);
     } else {
         des.fillStyle = "#111116";
         des.fillRect(0, 0, larguraTotal, alturaBarra);
@@ -955,7 +996,7 @@ function desenharBarraXP() {
 
     if (larguraPreenchimento > 0) {
         des.fillStyle = "#2ecc71"; 
-        des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 24);
+        des.fillRect((window.innerWidth / 2 ) - (384 + 12), 12, larguraPreenchimento, alturaBarra - 24);
     }
 
     des.fillStyle = "#ffffff";
@@ -1152,6 +1193,7 @@ function main(tempoAtual) {
 
 
     desenha()
+    atualizarEdesenharTransicaoFade(deltaTime); // Desenha o overlay de fade por cima de tudo, se estiver ativo
     atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main);

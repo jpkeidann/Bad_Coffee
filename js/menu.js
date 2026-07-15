@@ -2,7 +2,7 @@ let estadoJogo = 'MENU';
 
 // IMAGEM DE FUNDO
 let imagemFundoMenu = new Image();
-imagemFundoMenu.src = "../img/menu.png";
+imagemFundoMenu.src = "../Img/menu.png";
 
 // Cores e tamanhos 
 const configMenu = {
@@ -78,8 +78,10 @@ window.addEventListener('click', (e) => {
 
                 if (botao.id === '1P') {
                     estadoJogo = 'JOGANDO_1P';
+                    if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
                 } else if (botao.id === '2P') {
                     estadoJogo = 'JOGANDO_2P';
+                    if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
                 } else if (botao.id === 'SOBRE') {
                     estadoJogo = 'SOBRE';
                 }
@@ -119,7 +121,7 @@ function desenharMenu() {
     des.textAlign = "center";
     
 
-    let startY = canvas.height / 2 - 50;
+    let startY = canvas.height / 2 + 150;
     botoesMenu.forEach((botao, index) => {
         botao.x = canvas.width / 2 - botao.w / 2;
         botao.y = startY + (index * (botao.h + 30));
