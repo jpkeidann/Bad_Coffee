@@ -18,8 +18,6 @@ Um jogo de **Cafés VS Pragas**, baseado em *Brotato* e *Vampire Survivors*.
 
 **Professor orientador / Product Owner:** Carlos Roberto Da Silva Filho
 
-**Logotipo/Banner:** a imagem no topo deste README é a arte de fundo do menu principal do jogo (`Img/menu.png`).
-
 ---
 
 ## 2. Visão Geral do Sistema
