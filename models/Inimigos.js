@@ -2,8 +2,8 @@ const TIPOS_INIMIGOS = {
     acaro: { 
         id: "acaro", 
         nome: "Ácaro-Vermelho", 
-        largura: 35, 
-        altura: 35, 
+        largura: 72, 
+        altura: 57, 
         velocidade: 2.5, 
         vida: 15, 
         dano: 5, 
@@ -16,7 +16,7 @@ const TIPOS_INIMIGOS = {
     broca: { 
         id: "broca", 
         nome: "Broca-do-Café", 
-        largura: 55, altura: 55, 
+        largura: 108, altura: 60, 
         velocidade: 1.5, 
         vida: 35, 
         dano: 10, 
@@ -29,8 +29,8 @@ const TIPOS_INIMIGOS = {
     bichoMineiro: { 
         id: "bichoMineiro", 
         nome: "Bicho-Mineiro", 
-        largura: 105, 
-        altura: 105, 
+        largura: 104, 
+        altura: 64, 
         velocidade: 1.2, 
         vida: 20, 
         dano: 0, 
@@ -43,8 +43,8 @@ const TIPOS_INIMIGOS = {
     larva: { 
         id: "larva",
         nome: "Larva Mineira",  
-        largura: 35, 
-        altura: 20, 
+        largura: 44, 
+        altura: 13, 
         velocidade: 3.5, 
         vida: 1, 
         dano: 3, 
