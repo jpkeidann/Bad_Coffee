@@ -141,6 +141,46 @@ function desenharMenu() {
     des.textBaseline = "alphabetic";
 }
 
+// Desenha o nome + link clicável de uma pessoa (dev ou dono do projeto) numa coluna,
+// registrando a área de clique em linksGitHub. Retorna o Y seguinte, já espaçado.
+function desenharCardPessoa(pessoa, x, yAtual) {
+    des.fillStyle = "white";
+    des.font = "bold 16px Arial";
+    des.fillText(pessoa.nome, x, yAtual);
+
+    yAtual += 20;
+    des.font = "13px Arial";
+
+    // Medição do texto para definir o local exato onde o clique será ativado
+    const metricasTexto = des.measureText(pessoa.displayLink);
+    const linkX = x;
+    const linkY = yAtual - 11; // Ajuste fino vertical do texto
+    const linkW = metricasTexto.width;
+    const linkH = 14;
+
+    const mouseSobreLink = mouseX >= linkX && mouseX <= linkX + linkW &&
+                           mouseY >= linkY && mouseY <= linkY + linkH;
+
+    // Registra os dados da caixa delimitadora do link
+    linksGitHub.push({ x: linkX, y: linkY, w: linkW, h: linkH, url: pessoa.url });
+
+    if (mouseSobreLink) {
+        des.fillStyle = "#FFFF55"; // Destaque amarelo ao passar o mouse
+        // Desenha um sublinhado estiloso
+        des.strokeStyle = "#FFFF55";
+        des.lineWidth = 1;
+        des.beginPath();
+        des.moveTo(linkX, yAtual + 2);
+        des.lineTo(linkX + linkW, yAtual + 2);
+        des.stroke();
+    } else {
+        des.fillStyle = "#33CCFF"; // Azul claro de link comum
+    }
+
+    des.fillText(pessoa.displayLink, x, yAtual);
+    return yAtual + 35; // Espaço confortável para o próximo card
+}
+
 function desenharSobre() {
     // Fundo cinza escuro elegante com tema de Bad Coffee
     des.fillStyle = "#0F0F13";
@@ -161,7 +201,7 @@ function desenharSobre() {
     des.textAlign = "left";
     des.fillStyle = "#FF5555"; // Título de Seção Vermelho
     des.font = "bold 24px Arial";
-    des.fillText("🎮 COMO JOGAR", colLeftX, y);
+    des.fillText(" COMO JOGAR", colLeftX, y);
     
     y += 30;
     des.fillStyle = "white";
@@ -173,9 +213,9 @@ function desenharSobre() {
     des.fillStyle = "#CCCCCC";
     des.fillText("Sobreviva ao ataque implacável de ondas de inimigos.", colLeftX, y);
     y += 20;
-    des.fillText("Derrote inimigos, ganhe pontos e colete melhorias", colLeftX, y);
+    des.fillText("Derrote inimigos para ganha xp ", colLeftX, y);
     y += 20;
-    des.fillText("que surgem pelo mapa para ficar mais forte!", colLeftX, y);
+    des.fillText("Que viram itens/armas para ficar mais forte!", colLeftX, y);
     
     y += 35;
     des.fillStyle = "white";
@@ -201,7 +241,7 @@ function desenharSobre() {
     y = 140;
     des.fillStyle = "#55FF55"; // Título de Seção Verde
     des.font = "bold 24px Arial";
-    des.fillText("👥 DESENVOLVEDORES", colRightX, y);
+    des.fillText(" DESENVOLVEDORES", colRightX, y);
     
     y += 30;
     des.fillStyle = "#CCCCCC";
@@ -220,42 +260,18 @@ function desenharSobre() {
     
     y += 30;
     desenvolvedores.forEach(dev => {
-        des.fillStyle = "white";
-        des.font = "bold 16px Arial";
-        des.fillText(dev.nome, colRightX, y);
-        
-        y += 20;
-        des.font = "13px Arial";
-        
-        // Medição do texto para definir o local exato onde o clique será ativado
-        const metricasTexto = des.measureText(dev.displayLink);
-        const linkX = colRightX;
-        const linkY = y - 11; // Ajuste fino vertical do texto
-        const linkW = metricasTexto.width;
-        const linkH = 14;
-        
-        const mouseSobreLink = mouseX >= linkX && mouseX <= linkX + linkW &&
-                               mouseY >= linkY && mouseY <= linkY + linkH;
-        
-        // Registra os dados da caixa delimitadora do link
-        linksGitHub.push({ x: linkX, y: linkY, w: linkW, h: linkH, url: dev.url });
-        
-        if (mouseSobreLink) {
-            des.fillStyle = "#FFFF55"; // Destaque amarelo ao passar o mouse
-            // Desenha um sublinhado estiloso
-            des.strokeStyle = "#FFFF55";
-            des.lineWidth = 1;
-            des.beginPath();
-            des.moveTo(linkX, y + 2);
-            des.lineTo(linkX + linkW, y + 2);
-            des.stroke();
-        } else {
-            des.fillStyle = "#33CCFF"; // Azul claro de link comum
-        }
-        
-        des.fillText(dev.displayLink, colRightX, y);
-        y += 35; // Espaço confortável para o próximo desenvolvedor
+        y = desenharCardPessoa(dev, colRightX, y);
     });
+
+    // --- DONO DO PROJETO ---
+    y += 15;
+    des.fillStyle = "#FFD700"; // Título de Seção Dourado
+    des.font = "bold 18px Arial";
+    des.fillText(" DONO DO PROJETO", colRightX, y);
+    y += 30;
+
+    const donoProjeto = { nome: "Professor Carlos Senai", displayLink: "github.com/Prof-Carlos-Senai", url: "https://github.com/Prof-Carlos-Senai" };
+    y = desenharCardPessoa(donoProjeto, colRightX, y);
 
     // --- BOTÃO VOLTAR (RODAPÉ) ---
     botaoVoltar.w = 240;
