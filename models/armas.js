@@ -4,9 +4,9 @@ const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de 
 
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 10, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24 },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 1000, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36 },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 12, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36 },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 12, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24, somDisparo: "../sound/p320 shot.mp3" },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 900, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36, somDisparo: "../sound/mp5 shot.mp3" },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 8, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36, somDisparo: "../sound/ks shot.mp3" },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
@@ -14,14 +14,20 @@ const catalogoGlobal = [
         throwRange: 500,  // Distância máxima que o sabre viaja para longe de você
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
         spinSpeed: 20,    // Velocidade do giro da lâmina
-        projectileW: 120, projectileH: 14
+        projectileW: 120, projectileH: 14,
+        somDisparo: "../sound/lightsaber.mp3"
     },
     {
         id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 3, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
         orbitRadius: 150, spinSpeed: 2, orbitDuration: 3100,
         projectileW: 87, projectileH: 51
     },
-    { id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 7000, damage: 45, projectileSpeed: 550, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40 },
+    {
+        id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 7000, damage: 50, projectileSpeed: 400, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40,
+        somDisparo: "../sound/gjalahorn fire.mp3",
+        somMidair: "../sound/gjalahorn midair.mp3",
+        somExplosao: "../sound/gjalahorn kaboom.mp3"
+    },
 
     // --- ITENS (ACESSÓRIOS) Continuam iguais ---
     { id: 'seringa', name: 'Adrenalina', type: 'passive', maxLevel: 5, description: 'O café fica mais rápido.', imgSrc: "../Img/seringa.png" },
