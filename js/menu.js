@@ -79,9 +79,11 @@ window.addEventListener('click', (e) => {
                 if (botao.id === '1P') {
                     estadoJogo = 'JOGANDO_1P';
                     if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
+                    if (typeof tocarMusicaFase === 'function') tocarMusicaFase("../music/fuel-abbynoise-main-version-02-28-17433.mp3");
                 } else if (botao.id === '2P') {
                     estadoJogo = 'JOGANDO_2P';
                     if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
+                    if (typeof tocarMusicaFase === 'function') tocarMusicaFase("../music/fuel-abbynoise-main-version-02-28-17433.mp3");
                 } else if (botao.id === 'SOBRE') {
                     estadoJogo = 'SOBRE';
                 }
@@ -195,7 +197,11 @@ function desenharSobre() {
     // Divisão do conteúdo em duas colunas bem estruturadas
     const colLeftX = canvas.width * 0.08;
     const colRightX = canvas.width * 0.55;
-    
+
+    // Limpa as áreas de clique dos links (música, devs, dono do projeto) pra recalcular neste quadro.
+    // Precisa ser feito uma vez só, antes de qualquer desenharCardPessoa() ser chamado.
+    linksGitHub = [];
+
     // --- COLUNA 1: COMO JOGAR (ESQUERDA) ---
     let y = 140;
     des.textAlign = "left";
@@ -234,7 +240,22 @@ function desenharSobre() {
     des.font = "14px Arial";
     des.fillStyle = "#CCCCCC";
     des.fillText("• Teclas [ SETAS ] do teclado para se movimentar.", colLeftX, y);
-    
+
+    // --- TRILHA SONORA / LICENÇAS (créditos exigidos pelo Uppbeat) ---
+    y += 35;
+    des.fillStyle = "#9B59B6"; // Título de Seção Roxo
+    des.font = "bold 18px Arial";
+    des.fillText("🎵 TRILHA SONORA", colLeftX, y);
+    y += 30;
+
+    const musicas = [
+        { nome: "Music from #Uppbeat (free for Creators!):", displayLink: "uppbeat.io/t/abbynoise/fuel", url: "https://uppbeat.io/t/abbynoise/fuel" },
+        { nome: "Music from #Uppbeat (free for Creators!):", displayLink: "uppbeat.io/t/abbynoise/scorcher", url: "https://uppbeat.io/t/abbynoise/scorcher" }
+    ];
+
+    musicas.forEach(musica => {
+        y = desenharCardPessoa(musica, colLeftX, y);
+    });
 
 
     // --- COLUNA 2: DESENVOLVEDORES (DIREITA) ---
@@ -255,9 +276,7 @@ function desenharSobre() {
         { nome: "Davi P. Fagundes", displayLink: "github.com/davipf273", url: "https://github.com/davipf273" },
         { nome: "Pedro Henrique Caldart Warmling", displayLink: "github.com/mendig0d0smares", url: "https://github.com/mendig0d0smares" }
     ];
-    
-    linksGitHub = []; // Limpa coordenadas para recalcular no quadro atual
-    
+
     y += 30;
     desenvolvedores.forEach(dev => {
         y = desenharCardPessoa(dev, colRightX, y);

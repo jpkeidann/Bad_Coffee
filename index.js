@@ -24,8 +24,8 @@ des.mozImageSmoothingEnabled = false;
 // ==========================================
 // 2. INICIALIZAÇÃO DE ATORES E IMAGENS
 // ==========================================
-let player = new Player(200, 200, 64, 64, "../Img/bad_coffee.png")
-let player2 = new Player(300, 200, 64, 64, "../Img/bad_coffee2.png")
+let player = new Player(930, 540, 64, 64, "../Img/bad_coffee.png")
+let player2 = new Player(990, 540, 64, 64, "../Img/bad_coffee2.png")
 player2.hitbox = { x: 4, y: 4, w: 56, h: 56 };
 
 let teclasP2 = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -70,6 +70,10 @@ imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
 
 const imgKaboom = new Image();
 imgKaboom.src = "../Img/kaboom.png";
+
+// Spritesheet da transição de fade (13 quadros), cobre a tela toda
+const imgFade = new Image();
+imgFade.src = "../Img/fade.png";
 
 // ==========================================
 // 3. SISTEMA DE LEVEL UP (INTERRUPÇÃO)
@@ -275,6 +279,61 @@ function tocarSom(caminho) {
     if (!caminho) return;
     const audio = new Audio(caminho);
     audio.play().catch(() => {});
+}
+
+// ==========================================
+// MÚSICA DE FUNDO (Fases 1/2 e Boss)
+// ==========================================
+let volumeMusica = 0.15;          // Volume da música de fundo (0 a 1). Mude aqui se precisar.
+const DURACAO_FADE_MUSICA = 2500; // ms que o fade out da música leva até silenciar de vez.
+
+const musicaFundo = new Audio();
+musicaFundo.loop = true;
+
+let fadeMusicaInterval = null; // Controla o fade out em andamento, se houver
+
+// Troca (ou começa) a música de fundo tocando em loop no volume de "volumeMusica".
+function tocarMusicaFase(caminho) {
+    if (fadeMusicaInterval) {
+        clearInterval(fadeMusicaInterval);
+        fadeMusicaInterval = null;
+    }
+    musicaFundo.src = caminho;
+    musicaFundo.volume = volumeMusica;
+    musicaFundo.currentTime = 0;
+    musicaFundo.play().catch(() => {});
+}
+
+// Abaixa o volume aos poucos até 0 e então pausa. "aoTerminar" (opcional) roda depois,
+// útil pra emendar a próxima música assim que o fade out acabar.
+function pararMusicaComFade(aoTerminar) {
+    if (fadeMusicaInterval) clearInterval(fadeMusicaInterval);
+
+    const passos = 25;
+    const intervaloMs = DURACAO_FADE_MUSICA / passos;
+    const volumeInicial = musicaFundo.volume;
+    let passoAtual = 0;
+
+    fadeMusicaInterval = setInterval(() => {
+        passoAtual++;
+        musicaFundo.volume = Math.max(0, volumeInicial * (1 - passoAtual / passos));
+
+        if (passoAtual >= passos) {
+            clearInterval(fadeMusicaInterval);
+            fadeMusicaInterval = null;
+            musicaFundo.pause();
+            if (typeof aoTerminar === 'function') aoTerminar();
+        }
+    }, intervaloMs);
+}
+
+// Para a música na hora, sem fade (usado no Game Over e na Vitória).
+function pararMusicaImediatamente() {
+    if (fadeMusicaInterval) {
+        clearInterval(fadeMusicaInterval);
+        fadeMusicaInterval = null;
+    }
+    musicaFundo.pause();
 }
 
 function controlarTiros(deltaTime, disparosFeitos = []) {
@@ -662,6 +721,44 @@ function desenharExplosoes() {
     });
 }
 
+// Transição de tela em fade (usada na troca de FASE e do Menu para o jogo).
+// Chame iniciarTransicaoFade() no momento da troca; o overlay cobre a tela e
+// vai ficando transparente sozinho, sem travar o resto do jogo.
+let transicaoFade = { ativa: false, frameX: 0, frameTimer: 0 };
+const TOTAL_QUADROS_FADE = 13;   // fade.png tem 13 quadros
+const DURACAO_QUADRO_FADE = 40;  // ms por quadro. Mude aqui pra ajustar a velocidade da transição
+let delayTransicaoFase = 3000;   // ms de espera (com "Fase Concluída!" na tela) antes de começar a animação de fade. Mude aqui se precisar.
+
+function iniciarTransicaoFade() {
+    transicaoFade.ativa = true;
+    transicaoFade.frameX = 0;
+    transicaoFade.frameTimer = 0;
+}
+
+function atualizarEdesenharTransicaoFade(deltaTime) {
+    if (!transicaoFade.ativa) return;
+
+    transicaoFade.frameTimer += deltaTime;
+    if (transicaoFade.frameTimer >= DURACAO_QUADRO_FADE) {
+        transicaoFade.frameTimer = 0;
+        transicaoFade.frameX++;
+        if (transicaoFade.frameX >= TOTAL_QUADROS_FADE) {
+            transicaoFade.ativa = false;
+            return;
+        }
+    }
+
+    if (imgFade.complete && imgFade.naturalWidth !== 0) {
+        let larguraQuadro = imgFade.naturalWidth / TOTAL_QUADROS_FADE;
+        let alturaQuadro = imgFade.naturalHeight;
+        des.drawImage(
+            imgFade,
+            transicaoFade.frameX * larguraQuadro, 0, larguraQuadro, alturaQuadro,
+            0, 0, canvas.width, canvas.height
+        );
+    }
+}
+
 // ==========================================
 // 6. GERENCIADOR DE INIMIGOS E LOGICA DE WAVES
 // ==========================================
@@ -753,10 +850,13 @@ function iniciarWave() {
     
     if (faseAtual === 3 && waveAtual === 3) {
         textoMensagemWave = "ALERTA DE BOSS: QUESADA GIGAS!";
-        timerMensagemWave = 4000; 
+        timerMensagemWave = 4000;
         inimigosParaSpawnar = 0; // Boss é spawnado manualmente, sem fila comum
-        inimigosVivos = 1;       
-        spawnarBoss();           
+        inimigosVivos = 1;
+        spawnarBoss();
+
+        // Fade out da música das Fases 1/2 e, assim que sumir de vez, entra a música do Boss
+        pararMusicaComFade(() => tocarMusicaFase("../music/scorcher-abbynoise-main-version-21507-02-23.mp3"));
     } else {
         textoMensagemWave = `FASE ${faseAtual} - WAVE ${waveAtual}`;
         timerMensagemWave = 3500;
@@ -776,15 +876,18 @@ function verificarFimDaWave() {
             jogoVencido = true;
             textoMensagemWave = "PARABÉNS!!";
             timerMensagemWave = 999999;
+            pararMusicaImediatamente();
             return;
         }
 
         // Se concluiu a Wave 3 de qualquer fase, avança de Fase e reseta as Waves para 1
         if (waveAtual === 3) {
-            textoMensagemWave = `FASE ${faseAtual} CONCLUÍDA!`;
-            timerMensagemWave = 2500;
+            textoMensagemWave = "Fase Concluída!";
+            timerMensagemWave = delayTransicaoFase;
             faseAtual++;
             waveAtual = 1;
+            // Espera "delayTransicaoFase" ms mostrando o texto antes de iniciar a transição de tela
+            setTimeout(iniciarTransicaoFade, delayTransicaoFase);
         } else {
             // Caso contrário, apenas avança para a próxima Wave dentro da mesma Fase
             textoMensagemWave = "WAVE CONCLUÍDA!";
@@ -1034,6 +1137,44 @@ function desenharBarraXP() {
 // ============================ MAIN ===================================
 // desenharMenu() e desenharSobre() agora vivem em menu.js
 
+// Botão "VOLTAR AO MENU" usado tanto na tela de Derrota quanto na de Vitória.
+// Reaproveita mouseX/mouseY (já calculados em menu.js) pra hover e clique.
+let botaoVoltarMenuJogo = { x: 0, y: 0, w: 260, h: 55 };
+
+function desenharBotaoVoltarMenuJogo(y) {
+    botaoVoltarMenuJogo.x = canvas.width / 2 - botaoVoltarMenuJogo.w / 2;
+    botaoVoltarMenuJogo.y = y;
+
+    let hover = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
+                mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+
+    des.fillStyle = hover ? "#555555" : "#222226";
+    des.fillRect(botaoVoltarMenuJogo.x, botaoVoltarMenuJogo.y, botaoVoltarMenuJogo.w, botaoVoltarMenuJogo.h);
+    des.strokeStyle = "white";
+    des.lineWidth = 2;
+    des.strokeRect(botaoVoltarMenuJogo.x, botaoVoltarMenuJogo.y, botaoVoltarMenuJogo.w, botaoVoltarMenuJogo.h);
+
+    des.fillStyle = "white";
+    des.font = "bold 18px Arial";
+    des.textAlign = "center";
+    des.textBaseline = "middle";
+    des.fillText("VOLTAR AO MENU", botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w / 2, botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h / 2);
+    des.textBaseline = "alphabetic";
+}
+
+// Clique no botão de Voltar ao Menu (só reage quando a tela de Derrota ou Vitória está visível).
+// Recarrega a página pra garantir que TUDO (vida, waves, fase, armas, inimigos, música) volte limpo.
+window.addEventListener('click', () => {
+    if (!gameOver && !jogoVencido) return;
+
+    let dentroDoBotao = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
+                         mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+
+    if (dentroDoBotao) {
+        location.reload();
+    }
+});
+
 function desenha() {
     if (imgBackground.complete) {
         des.drawImage(imgBackground, 0, 0, canvas.width, canvas.height);
@@ -1088,25 +1229,51 @@ function desenha() {
         des.font = "16px Arial";
         des.fillStyle = "#bdc3c7";
         des.fillText("Recarregue a página para jogar novamente.", canvas.width / 2, canvas.height / 2 + 65);
-        des.textAlign = "left"; 
+        des.textAlign = "left";
+
+        desenharBotaoVoltarMenuJogo(canvas.height / 2 + 100);
+    }
+
+    // Tela de Derrota, mostrada quando não sobra nenhum jogador vivo
+    if (gameOver) {
+        des.fillStyle = "rgba(0, 0, 0, 0.85)";
+        des.fillRect(0, 0, canvas.width, canvas.height);
+
+        des.fillStyle = "#e74c3c";
+        des.font = "bold 52px Arial";
+        des.textAlign = "center";
+        des.fillText("VOCÊ PERDEU", canvas.width / 2, canvas.height / 2 - 40);
+
+        des.fillStyle = "#ffffff";
+        des.font = "bold 20px Arial";
+        des.fillText("O cafezal foi tomado pelas pragas...", canvas.width / 2, canvas.height / 2 + 20);
+        des.textAlign = "left";
+
+        desenharBotaoVoltarMenuJogo(canvas.height / 2 + 70);
     }
 }
 
 function atualiza(deltaTime,disparosFeitos = []) {
     if (jogoVencido) return; // Trava o progresso do jogo se tiver vencido
+    if (gameOver) return;    // Trava o progresso do jogo se o jogador morreu
     if (menuLevelUpAtivo) return;
 
     let limiteCima = 0;
     let limiteBaixo = canvas.height;
     let limiteEsq = 0;
     let limiteDir = canvas.width;
-    
-    player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
+
     controlarPlayers();
 
-    // CORREÇÃO ITEM "LEITE": atualizarMecanicas() aplica o regen (this.regen) a cada frame.
-    // Ela já existia em player.js, mas nunca era chamada em lugar nenhum do jogo.
-    player.atualizarMecanicas(deltaTime);
+    // Só move e aplica mecânicas (regen) do Player 1 se ele ainda estiver vivo.
+    // Sem essa checagem, mesmo com vidaAtual em 0 ele continuava andando e brigando normalmente (imortal).
+    if (player.vidaAtual > 0) {
+        player.mov_player(limiteCima, limiteBaixo, limiteEsq, limiteDir);
+
+        // CORREÇÃO ITEM "LEITE": atualizarMecanicas() aplica o regen (this.regen) a cada frame.
+        // Ela já existia em player.js, mas nunca era chamada em lugar nenhum do jogo.
+        player.atualizarMecanicas(deltaTime);
+    }
 
     controlarTiros(deltaTime, disparosFeitos);
     atualizarEfeitosArmas(deltaTime);
@@ -1140,6 +1307,13 @@ function atualiza(deltaTime,disparosFeitos = []) {
             frameTimer = 0;
         }
     }
+
+    // Verifica se não sobrou nenhum jogador vivo (no 1P é só o player; no 2P precisa dos dois mortos)
+    let ninguemVivo = player.vidaAtual <= 0 && (estadoJogo !== 'JOGANDO_2P' || player2.vidaAtual <= 0);
+    if (ninguemVivo) {
+        gameOver = true;
+        pararMusicaImediatamente();
+    }
 }
 
 let ultimoTempo = 0;
@@ -1164,7 +1338,13 @@ function main(tempoAtual) {
 
     des.clearRect(0, 0, canvas.width, canvas.height);
 
-    let jogadoresAtivos = [player];
+    // CORREÇÃO IMORTALIDADE: só entra na lista de jogadores ativos quem realmente está vivo.
+    // Antes o Player 1 entrava sempre, então mesmo com 0 de vida continuava atirando e
+    // sendo alvo válido dos inimigos (o que na prática o deixava "imortal" no modo 2P).
+    let jogadoresAtivos = [];
+    if (player.vidaAtual > 0) {
+        jogadoresAtivos.push(player);
+    }
 
     // Se clicou em 2 Jogadores E o Jogador 2 estiver vivo, processa ele!
     if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
@@ -1212,6 +1392,7 @@ function main(tempoAtual) {
 
 
     desenha()
+    atualizarEdesenharTransicaoFade(deltaTime); // Desenha o overlay de fade por cima de tudo, se estiver ativo
     atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main);
