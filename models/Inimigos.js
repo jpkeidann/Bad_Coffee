@@ -4,7 +4,7 @@ const TIPOS_INIMIGOS = {
         nome: "Ácaro-Vermelho", 
         largura: 72, 
         altura: 57, 
-        velocidade: 2.5, 
+        velocidade: 3, 
         vida: 15, 
         dano: 5, 
         xp: 5, 
@@ -16,15 +16,15 @@ const TIPOS_INIMIGOS = {
     broca: { 
         id: "broca", 
         nome: "Broca-do-Café", 
-        largura: 108, altura: 60, 
-        velocidade: 1.5, 
+        largura: 96, altura: 63, 
+        velocidade: 1, 
         vida: 35, 
         dano: 10, 
         xp: 10, 
         knockbackResistencia: 0.5, 
         img: "../Img/broca.png", 
-        frames: 3, 
-        tempoFrame: 150 
+        frames: 11, 
+        tempoFrame: 100
     },
     bichoMineiro: { 
         id: "bichoMineiro", 

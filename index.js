@@ -57,13 +57,13 @@ const imgBarraXPVazia = new Image();
 imgBarraXPVazia.src = '../Img/2xp_bar_img.png'
 
 const imgBarraInventario = new Image();
-imgBarraInventario.src = "../Img/barra_item.png"; 
+imgBarraInventario.src = "../Img/barra_item.png";
 
 const imgBackground = new Image();
-imgBackground.src = "../Img/Background.png"; 
+imgBackground.src = "../Img/Background.png";
 
 const imgXicara = new Image();
-imgXicara.src = "../Img/xicara.png"; 
+imgXicara.src = "../Img/xicara.png";
 
 const imgFogueteAnimado = new Image();
 imgFogueteAnimado.src = "../Img/tiroGjahllahorn_SpriteSheet.png";
@@ -246,6 +246,12 @@ let velocidadeCar = 1
 document.addEventListener('keydown', (e) => { keys[e.key] = true })
 document.addEventListener('keyup', (e) => { keys[e.key] = false })
 
+// DEBUG: aperte H para mostrar/esconder as hitboxes reais de tiros e inimigos (ver desenharHitboxesDebug)
+let mostrarHitboxes = false;
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'h') mostrarHitboxes = !mostrarHitboxes;
+});
+
 function controlarPlayers() {
     player.dirX = 0
     player.dirY = 0
@@ -278,7 +284,7 @@ let tirosNaTela = [];
 function tocarSom(caminho) {
     if (!caminho) return;
     const audio = new Audio(caminho);
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
 }
 
 // ==========================================
@@ -301,7 +307,7 @@ function tocarMusicaFase(caminho) {
     musicaFundo.src = caminho;
     musicaFundo.volume = volumeMusica;
     musicaFundo.currentTime = 0;
-    musicaFundo.play().catch(() => {});
+    musicaFundo.play().catch(() => { });
 }
 
 // Abaixa o volume aos poucos até 0 e então pausa. "aoTerminar" (opcional) roda depois,
@@ -334,6 +340,62 @@ function pararMusicaImediatamente() {
         fadeMusicaInterval = null;
     }
     musicaFundo.pause();
+}
+
+// Mantém as lâminas da Adaga sempre girando, sem depender de disparo/cooldown.
+// Cada jogador vivo tem seu próprio conjunto de lâminas por arma 'orbit' que possua,
+// e o tamanho desse conjunto é sempre igual a weapon.projectileCount (1 por nível de upgrade).
+// Toda vez que esse conjunto muda de tamanho (comprou/upou a adaga), TODAS as lâminas desse
+// jogador são reespaçadas em ângulos iguais entre si (igual ao desenho: sempre uma formação
+// simétrica em volta do jogador, começando "pra cima"). Se o tamanho não mudou, não faz nada,
+// então as lâminas continuam girando sem interrupção entre um frame e outro.
+function sincronizarAdagas() {
+    let jogadoresAtivos = [player];
+    if (estadoJogo === 'JOGANDO_2P') jogadoresAtivos.push(player2);
+    jogadoresAtivos = jogadoresAtivos.filter(p => p.vidaAtual > 0);
+
+    sistemaArmas.weapons.forEach(weapon => {
+        if (weapon.shootBehavior !== 'orbit') return;
+
+        if (!weapon.imgObjeto) {
+            weapon.imgObjeto = new Image();
+            weapon.imgObjeto.src = weapon.bulletImgSrc;
+        }
+
+        jogadoresAtivos.forEach(atirador => {
+            let ladasAtuais = tirosNaTela.filter(t => t.permanente && t.weaponId === weapon.id && t.atirador === atirador);
+
+            if (ladasAtuais.length === weapon.projectileCount) return; // nada mudou, mantém como está
+
+            // Cria as lâminas que faltam (posição/ângulo exatos não importam aqui,
+            // porque todo mundo é reespaçado igual embaixo, na mesma sincronização)
+            for (let i = ladasAtuais.length; i < weapon.projectileCount; i++) {
+                let novaAdaga = {
+                    atirador: atirador,
+                    weaponId: weapon.id,
+                    shootBehavior: 'orbit',
+                    type: weapon.projectileType,
+                    img: weapon.imgObjeto,
+                    anguloOrbita: 0,
+                    angulo: 0,
+                    x: atirador.x,
+                    y: atirador.y,
+                    w: weapon.projectileW || 87,
+                    h: weapon.projectileH || 51,
+                    permanente: true,
+                    ultimosHits: new Map() // inimigo -> ms restantes até poder acertar esse mesmo inimigo de novo
+                };
+                tirosNaTela.push(novaAdaga);
+                ladasAtuais.push(novaAdaga);
+            }
+
+            // Reespaça TODAS as lâminas (as antigas e as novas) em ângulos iguais entre si
+            let espacamento = (Math.PI * 2) / weapon.projectileCount;
+            ladasAtuais.forEach((lada, i) => {
+                lada.anguloOrbita = (-Math.PI / 2) + (espacamento * i);
+            });
+        });
+    });
 }
 
 function controlarTiros(deltaTime, disparosFeitos = []) {
@@ -449,58 +511,45 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                     inimigosAtingidosVolta: [],
                     atirador: disparo.atirador
                 });
-            } else if (disparo.shootBehavior === 'orbit') {
-                let raio = armaDoTiro?.orbitRadius || 60;
-                let velGiro = disparo.spinSpeed || armaDoTiro?.spinSpeed || 4;
-                let tempoDuracao = armaDoTiro?.orbitDuration || 3000;
-                let quantidade = disparo.projectileCount || 1;
-                let espacamento = (Math.PI * 2) / quantidade;
-
-                for (let i = 0; i < quantidade; i++) {
-                    tirosNaTela.push({
-                        x: centroPx,
-                        y: centroPy,
-                        anguloOrbita: (-Math.PI / 2) + (espacamento * i),
-                        distanciaBase: raio,
-                        velocidadeOrbita: velGiro,
-                        tempoVidaTotal: tempoDuracao,
-                        tempoVida: tempoDuracao,
-                        angulo: 0,
-                        img: imgBala,
-                        type: disparo.projectileType,
-                        shootBehavior: 'orbit',
-                        damage: disparo.damage,
-                        isCritical: disparo.isCritical,
-                        w: armaDoTiro?.projectileW || 174,
-                        h: armaDoTiro?.projectileH || 102,
-                        orbitando: true,
-                        inimigosAtingidos: [],
-                        atirador: disparo.atirador
-                    });
-                }
             }
         });
     }
+
+    sincronizarAdagas(); // essa função serve para com que as adagas funcionem sem precisar de cooldown
 
     for (let i = tirosNaTela.length - 1; i >= 0; i--) {
         let tiro = tirosNaTela[i];
 
         if (tiro.shootBehavior === 'orbit') {
+            // Lê velocidade/raio direto da arma (não guardados na lâmina) pra upgrades
+            // (spinSpeed, orbitRadius) valerem na hora pra todas as lâminas já existentes.
+            let armaAdaga = sistemaArmas.weapons.find(w => w.id === tiro.weaponId);
+            let velGiro = armaAdaga?.spinSpeed || 2;
+            let raio = armaAdaga?.orbitRadius || 150;
             let centroPx = tiro.atirador.x + tiro.atirador.w / 2;
             let centroPy = tiro.atirador.y + tiro.atirador.h / 2;
 
-            tiro.anguloOrbita += tiro.velocidadeOrbita * (deltaTime / 1000);
+            tiro.anguloOrbita += velGiro * (deltaTime / 1000);
             tiro.angulo = tiro.anguloOrbita;
 
-            tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * tiro.distanciaBase;
-            tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * tiro.distanciaBase;
+            tiro.x = centroPx + Math.cos(tiro.anguloOrbita) * raio;
+            tiro.y = centroPy + Math.sin(tiro.anguloOrbita) * raio;
+
+            // Conta regressiva do cooldown de hit por inimigo (ver verificarColisaoTiros)
+            if (tiro.ultimosHits && tiro.ultimosHits.size > 0) {
+                tiro.ultimosHits.forEach((restante, inimigoRef) => {
+                    let novoRestante = restante - deltaTime;
+                    if (novoRestante <= 0) tiro.ultimosHits.delete(inimigoRef);
+                    else tiro.ultimosHits.set(inimigoRef, novoRestante);
+                });
+            }
         } else {
             tiro.x += tiro.vx * (deltaTime / 1000);
             tiro.y += tiro.vy * (deltaTime / 1000);
         }
 
-        tiro.tempoVida -= deltaTime;
-        
+        if (!tiro.permanente) tiro.tempoVida -= deltaTime; // adaga é permanente, não tem tempoVida pra descontar
+
         if (tiro.type === 'big_boom') {
             tiro.frameTimer += deltaTime;
             if (tiro.frameTimer >= 100) {
@@ -536,7 +585,7 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
         }
     }
 
-    tirosNaTela = tirosNaTela.filter(t => t.tempoVida > 0);
+    tirosNaTela = tirosNaTela.filter(t => t.permanente || t.tempoVida > 0);
 }
 
 function desenharTiros() {
@@ -568,6 +617,38 @@ function desenharTiros() {
     });
 }
 
+// DEBUG (tecla H): desenha a hitbox REAL de cada tiro e de cada inimigo, usando as
+// mesmas contas de verificarColisaoTiros() e o mesmo this.hitbox do Inimigo — não é
+// um desenho "parecido", é a forma exata usada nas checagens de colisão.
+function desenharHitboxesDebug() {
+    des.save();
+    des.lineWidth = 1;
+
+    tirosNaTela.forEach(tiro => {
+        des.beginPath();
+        if (tiro.type === 'force') {
+            // verificarColisaoTiros: quadrado de lado tiro.w, SEM rotação, centrado em (tiro.x, tiro.y)
+            des.strokeStyle = "#00ff00";
+            des.rect(tiro.x - tiro.w / 2, tiro.y - tiro.w / 2, tiro.w, tiro.w);
+        } else {
+            // verificarColisaoTiros: círculo de raio 25 centrado em (tiro.x, tiro.y)
+            des.strokeStyle = "#00e5ff";
+            des.arc(tiro.x, tiro.y, 25, 0, Math.PI * 2);
+        }
+        des.stroke();
+    });
+
+    inimigos.forEach(inimigo => {
+        // Inimigos.js -> atualizarHitbox(): x/y/w/h relativos ao canto do sprite
+        des.beginPath();
+        des.strokeStyle = "#ff0040";
+        des.rect(inimigo.x + inimigo.hitbox.x, inimigo.y + inimigo.hitbox.y, inimigo.hitbox.w, inimigo.hitbox.h);
+        des.stroke();
+    });
+
+    des.restore();
+}
+
 function verificarColisaoTiros() {
     for (let i = tirosNaTela.length - 1; i >= 0; i--) {
         let tiro = tirosNaTela[i];
@@ -582,8 +663,6 @@ function verificarColisaoTiros() {
             let dy = tiro.y - centroInimigoY;
             let distancia = Math.sqrt(dx * dx + dy * dy);
 
-            // Lightsaber (type 'force'): checagem quadrada em volta da lâmina, já que ela
-            // é comprida (tiro.w) e um raio de 25px não cobria o alcance real da arma.
             // Lado do quadrado = comprimento do projétil (armas.js -> projectileW do lightsaber).
             let colidiu;
             if (tiro.type === 'force') {
@@ -594,7 +673,13 @@ function verificarColisaoTiros() {
             }
 
             if (colidiu) {
-                if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang' || tiro.shootBehavior === 'orbit') {
+                if (tiro.permanente) {
+                    // Adaga: não existe mais "só acerta 1x na vida do tiro" (ela nunca expira).
+                    // Em vez disso, cada lâmina tem um cooldown de hit de 500ms POR inimigo.
+                    let restante = tiro.ultimosHits.get(inimigo) || 0;
+                    if (restante > 0) continue;
+                    tiro.ultimosHits.set(inimigo, 500);
+                } else if (tiro.type === 'force' || tiro.shootBehavior === 'boomerang') {
                     let listaAtingidos;
                     if (tiro.shootBehavior === 'boomerang') {
                         listaAtingidos = tiro.faseRetorno ? tiro.inimigosAtingidosVolta : tiro.inimigosAtingidosIda;
@@ -634,10 +719,17 @@ function verificarColisaoTiros() {
                         frameTimer: 0,
                         tamanho: raioExplosao * 2 // cobre visualmente o raio da explosão
                     });
+                } else if (tiro.permanente) {
+                    // Adaga: dano lido direto da arma (assim upgrades de dano valem na hora),
+                    // com o crítico rolado aqui já que não existe mais um "disparo" único.
+                    let armaAdaga = sistemaArmas.weapons.find(w => w.id === tiro.weaponId);
+                    let dano = armaAdaga ? armaAdaga.damage : 0;
+                    if (Math.random() < sistemaArmas.critChance) dano = Math.floor(dano * sistemaArmas.critMultiplier);
+                    inimigo.tomarDano(dano);
                 } else {
                     inimigo.tomarDano(tiro.damage);
                 }
-                break; 
+                break;
             }
         }
 
@@ -660,7 +752,7 @@ function atualizarEfeitosArmas(deltaTime) {
 
 function desenharEfeitosArmas() {
     efeitosArmas.forEach(ef => {
-        
+
         // 1. RESOLUÇÃO: Descobre de quem é a arma. 
         // Ele tenta pegar o atirador/jogador do efeito. Se por acaso não achar, usa o player 1 de segurança.
         let donoDaArma = ef.atirador || ef.jogador || player;
@@ -762,29 +854,29 @@ function atualizarEdesenharTransicaoFade(deltaTime) {
 // ==========================================
 // 6. GERENCIADOR DE INIMIGOS E LOGICA DE WAVES
 // ==========================================
-let faseAtual = 1;  
+let faseAtual = 1;
 let pontos = 0;
 let gameOver = false;
 let inimigos = [];
-let waveAtual = 1;         
-let inimigosParaSpawnar = 0; 
-let inimigosVivos = 0;       
-let frameTimer = 0;          
-let descansoAtivo = false;   
-let bossAtual = null;      
+let waveAtual = 1;
+let inimigosParaSpawnar = 0;
+let inimigosVivos = 0;
+let frameTimer = 0;
+let descansoAtivo = false;
+let bossAtual = null;
 let jogoVencido = false;     // Flag para travar o loop de jogo e mostrar vitória
 
 let textoMensagemWave = "WAVE 1 - PREPARE-SE!";
-let timerMensagemWave = 3500; 
+let timerMensagemWave = 3500;
 
 // OBJETO CENTRAL DO ESTADO DO JOGO
 const contextoDoJogo = {
-    jogadores: [player],     
-    temDoisJogadores: false, 
+    jogadores: [player],
+    temDoisJogadores: false,
     barraXP: {
         adicionarXP: (qtd) => {
             if (typeof sistemaArmas !== "undefined" && sistemaArmas.gainXp) {
-                sistemaArmas.gainXp(qtd); 
+                sistemaArmas.gainXp(qtd);
             }
         }
     },
@@ -796,27 +888,27 @@ const contextoDoJogo = {
         inimigosVivos--;
         verificarFimDaWave();
     },
-    
+
     spawnarLarvas: function (origemX, origemY, quantidade) {
         let configLarva = TIPOS_INIMIGOS.larva || { largura: 35, altura: 20, img: "../Img/larva.png" };
-        let raioDeSpawn = 90; 
-        
+        let raioDeSpawn = 90;
+
         for (let i = 0; i < quantidade; i++) {
             let angulo = (Math.PI * 2 / quantidade) * i;
             let spawnX = origemX + Math.cos(angulo) * raioDeSpawn;
             let spawnY = origemY + Math.sin(angulo) * raioDeSpawn;
 
             let novaLarva = new Inimigo(
-                spawnX, spawnY, 
+                spawnX, spawnY,
                 configLarva.largura, configLarva.altura,
                 configLarva.img, configLarva, contextoDoJogo
             );
-            
+
             novaLarva.velKnockbackX = Math.cos(angulo) * 3;
             novaLarva.velKnockbackY = Math.sin(angulo) * 3;
 
             inimigos.push(novaLarva);
-            inimigosVivos++; 
+            inimigosVivos++;
         }
     },
     spawnarNinfas: function (origemX, origemY, quantidade) {
@@ -829,16 +921,16 @@ const contextoDoJogo = {
             let spawnY = origemY + Math.sin(angulo) * raioDeSpawn;
 
             let novaNinfa = new Inimigo(
-                spawnX, spawnY, 
+                spawnX, spawnY,
                 configNinfa.largura, configNinfa.altura,
                 configNinfa.img, configNinfa, contextoDoJogo
             );
-            
+
             novaNinfa.velKnockbackX = Math.cos(angulo) * 3;
             novaNinfa.velKnockbackY = Math.sin(angulo) * 3;
 
             inimigos.push(novaNinfa);
-            inimigosVivos++; 
+            inimigosVivos++;
         }
     }
 };
@@ -847,7 +939,7 @@ function iniciarWave() {
     console.log(`=== INICIANDO FASE ${faseAtual} - WAVE ${waveAtual} ===`);
     descansoAtivo = false;
 
-    
+
     if (faseAtual === 3 && waveAtual === 3) {
         textoMensagemWave = "ALERTA DE BOSS: QUESADA GIGAS!";
         timerMensagemWave = 4000;
@@ -861,10 +953,10 @@ function iniciarWave() {
         textoMensagemWave = `FASE ${faseAtual} - WAVE ${waveAtual}`;
         timerMensagemWave = 3500;
 
-        
-        let numeroWaveTotal = ((faseAtual - 1) * 3) + waveAtual; 
-        let quantidadeNestaWave = 3 + (numeroWaveTotal * 2);     
-        
+
+        let numeroWaveTotal = ((faseAtual - 1) * 3) + waveAtual;
+        let quantidadeNestaWave = 3 + (numeroWaveTotal * 2);
+
         inimigosParaSpawnar = quantidadeNestaWave;
         inimigosVivos = quantidadeNestaWave;
     }
@@ -918,7 +1010,7 @@ function spawnarInimigo() {
     let altura = configInimigo.altura || 45;
 
     let novoInimigo = new Inimigo(
-        spawnX, spawnY, largura, altura, 
+        spawnX, spawnY, largura, altura,
         configInimigo.img, configInimigo, contextoDoJogo
     );
 
@@ -931,17 +1023,17 @@ function spawnarBoss() {
     let alturaBoss = configBoss.altura || 160;
 
     // Spawn centralizado
-    let spawnX = (canvas.width / 2) - (larguraBoss / 2); 
-    let spawnY = (canvas.height / 2) - (alturaBoss / 2); 
+    let spawnX = (canvas.width / 2) - (larguraBoss / 2);
+    let spawnY = (canvas.height / 2) - (alturaBoss / 2);
 
     let novoBoss = new Inimigo(
-        spawnX, spawnY, larguraBoss, alturaBoss, 
+        spawnX, spawnY, larguraBoss, alturaBoss,
         configBoss.img, configBoss, contextoDoJogo
     );
 
     novoBoss.estado = "surgindo";
     novoBoss.timerSurgimento = 0;
-    novoBoss.tempoSurgimentoTotal = 3000; 
+    novoBoss.tempoSurgimentoTotal = 3000;
     novoBoss.particulas = [];
 
     bossAtual = novoBoss;
@@ -956,7 +1048,7 @@ function desenharBarraBoss(ctx) {
         let larguraBarra = canvas.width * 0.6;
         let alturaBarra = 24;
         let x = (canvas.width - larguraBarra) / 2;
-        let y = 70; 
+        let y = 70;
 
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(x, y, larguraBarra, alturaBarra);
@@ -973,12 +1065,12 @@ function desenharBarraBoss(ctx) {
         ctx.font = "bold 14px Arial";
         ctx.textAlign = "center";
         ctx.fillText(
-            `${bossAtual.nome.toUpperCase()} (${Math.ceil(bossAtual.vidaAtual)}/${bossAtual.vidaMaxima})`, 
+            `${bossAtual.nome.toUpperCase()} (${Math.ceil(bossAtual.vidaAtual)}/${bossAtual.vidaMaxima})`,
             canvas.width / 2, y + 17
         );
-        ctx.textAlign = "left"; 
+        ctx.textAlign = "left";
     } else {
-        bossAtual = null; 
+        bossAtual = null;
     }
 }
 
@@ -1002,7 +1094,7 @@ function desenharHUDWave(contexto) {
     contexto.font = "bold 14px Arial";
     contexto.textAlign = "center";
     contexto.textBaseline = "middle";
-    
+
     let totalRestante = inimigosVivos + inimigosParaSpawnar;
     let textoTop = `Fase ${faseAtual} - Wave ${waveAtual}   |   Resta: ${totalRestante}`;
     contexto.fillText(textoTop, canvas.width / 2, yCaixa + (altCaixa / 2));
@@ -1018,7 +1110,7 @@ function desenharHUDWave(contexto) {
         contexto.fillText(textoMensagemWave, (canvas.width / 2) + 3, (canvas.height / 3) + 3);
 
         // Cor do texto: Vermelho intimidador para o Boss, Amarelo para waves normais
-        contexto.fillStyle = (faseAtual === 3 && waveAtual === 3) ? "#e74c3c" : "#f1c40f"; 
+        contexto.fillStyle = (faseAtual === 3 && waveAtual === 3) ? "#e74c3c" : "#f1c40f";
         contexto.fillText(textoMensagemWave, canvas.width / 2, canvas.height / 3);
     }
 
@@ -1052,7 +1144,7 @@ function desenharInventarioVisual() {
 
     let tamanhoIcone = 64;
     let espacamentoSlot = 53;
-    let margemEsquerdaArmas = posX + 8; 
+    let margemEsquerdaArmas = posX + 8;
 
     for (let i = 0; i < sistemaArmas.maxWeaponSlots; i++) {
         let slotX = margemEsquerdaArmas + (i * espacamentoSlot);
@@ -1097,11 +1189,11 @@ function desenharInventarioVisual() {
             des.fillText(`Lvl ${item.level}`, slotX + 20, posY + 52);
         }
     }
-    des.textAlign = "left"; 
+    des.textAlign = "left";
 }
 
 function desenharBarraXP() {
-    let alturaBarra = 98; 
+    let alturaBarra = 98;
     let larguraTotal = 768;
 
     if (imgBarraXPVazia.complete) {
@@ -1112,12 +1204,12 @@ function desenharBarraXP() {
     }
 
     let proporcaoXp = sistemaArmas.currentXp / sistemaArmas.xpNeeded;
-    if (proporcaoXp > 1) proporcaoXp = 1; 
+    if (proporcaoXp > 1) proporcaoXp = 1;
 
     let larguraPreenchimento = (larguraTotal - 4) * proporcaoXp;
 
     if (larguraPreenchimento > 0) {
-        des.fillStyle = "#2ecc71"; 
+        des.fillStyle = "#2ecc71";
         des.fillRect(562, 12, larguraPreenchimento, alturaBarra - 24);
     }
 
@@ -1131,7 +1223,7 @@ function desenharBarraXP() {
     des.lineWidth = 3;
     des.strokeText(textoXP, canvas.width - 20, alturaBarra + 20);
     des.fillText(textoXP, canvas.width - 20, alturaBarra + 20);
-    des.textAlign = "left"; 
+    des.textAlign = "left";
 }
 
 // ============================ MAIN ===================================
@@ -1146,7 +1238,7 @@ function desenharBotaoVoltarMenuJogo(y) {
     botaoVoltarMenuJogo.y = y;
 
     let hover = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
-                mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+        mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
 
     des.fillStyle = hover ? "#555555" : "#222226";
     des.fillRect(botaoVoltarMenuJogo.x, botaoVoltarMenuJogo.y, botaoVoltarMenuJogo.w, botaoVoltarMenuJogo.h);
@@ -1168,7 +1260,7 @@ window.addEventListener('click', () => {
     if (!gameOver && !jogoVencido) return;
 
     let dentroDoBotao = mouseX >= botaoVoltarMenuJogo.x && mouseX <= botaoVoltarMenuJogo.x + botaoVoltarMenuJogo.w &&
-                         mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
+        mouseY >= botaoVoltarMenuJogo.y && mouseY <= botaoVoltarMenuJogo.y + botaoVoltarMenuJogo.h;
 
     if (dentroDoBotao) {
         location.reload();
@@ -1182,7 +1274,7 @@ function desenha() {
         des.fillStyle = "#2c3e50";
         des.fillRect(0, 0, canvas.width, canvas.height);
     }
-    
+
     player.des_player();
     player.desenharBarraVida(des);
     desenharEfeitosArmas();
@@ -1203,6 +1295,8 @@ function desenha() {
         inimigo.desenhar(des);
     });
 
+    if (mostrarHitboxes) desenharHitboxesDebug();
+
     desenharBarraXP();
     desenharInventarioVisual();
     desenharHUDWave(des);
@@ -1216,16 +1310,16 @@ function desenha() {
     if (jogoVencido) {
         des.fillStyle = "rgba(0, 0, 0, 0.85)";
         des.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         des.fillStyle = "#f1c40f";
         des.font = "bold 52px Arial";
         des.textAlign = "center";
         des.fillText("VITÓRIA!", canvas.width / 2, canvas.height / 2 - 40);
-        
+
         des.fillStyle = "#ffffff";
         des.font = "bold 20px Arial";
         des.fillText("Você derrotou Quesada Gigas e salvou o cafezal!", canvas.width / 2, canvas.height / 2 + 20);
-        
+
         des.font = "16px Arial";
         des.fillStyle = "#bdc3c7";
         des.fillText("Recarregue a página para jogar novamente.", canvas.width / 2, canvas.height / 2 + 65);
@@ -1253,7 +1347,7 @@ function desenha() {
     }
 }
 
-function atualiza(deltaTime,disparosFeitos = []) {
+function atualiza(deltaTime, disparosFeitos = []) {
     if (jogoVencido) return; // Trava o progresso do jogo se tiver vencido
     if (gameOver) return;    // Trava o progresso do jogo se o jogador morreu
     if (menuLevelUpAtivo) return;
@@ -1323,7 +1417,7 @@ function main(tempoAtual) {
     if (estadoJogo === 'MENU') {
         desenharMenu();
         requestAnimationFrame(main);
-        return; // Impede que os monstros comecem a andar atrás de nós!
+        return;
     } else if (estadoJogo === 'SOBRE') {
         desenharSobre();
         requestAnimationFrame(main);
@@ -1338,21 +1432,15 @@ function main(tempoAtual) {
 
     des.clearRect(0, 0, canvas.width, canvas.height);
 
-    // CORREÇÃO IMORTALIDADE: só entra na lista de jogadores ativos quem realmente está vivo.
-    // Antes o Player 1 entrava sempre, então mesmo com 0 de vida continuava atirando e
-    // sendo alvo válido dos inimigos (o que na prática o deixava "imortal" no modo 2P).
     let jogadoresAtivos = [];
     if (player.vidaAtual > 0) {
         jogadoresAtivos.push(player);
     }
 
-    // Se clicou em 2 Jogadores E o Jogador 2 estiver vivo, processa ele!
     if (estadoJogo === 'JOGANDO_2P' && player2.vidaAtual > 0) {
         jogadoresAtivos.push(player2);
 
-        // CORREÇÃO: Só move se o menu de level up NÃO estiver ativo (deixa ele travado)
-        if (!menuLevelUpAtivo.ativo) {
-            // CORREÇÃO VELOCIDADE: Multiplicado por (deltaTime / 1000) para não ficar super rápido
+        if (!menuLevelUpAtivo) {
             if (teclasP2.ArrowUp) player2.y -= player2.speed * (deltaTime / 1000);
             if (teclasP2.ArrowDown) player2.y += player2.speed * (deltaTime / 1000);
             if (teclasP2.ArrowLeft) player2.x -= player2.speed * (deltaTime / 1000);
@@ -1369,15 +1457,11 @@ function main(tempoAtual) {
 
     }
 
-    // CORREÇÃO IA: contextoDoJogo.jogadores estava fixo em [player], então os inimigos
-    // (que usam this.jogo.jogadores em definirAlvoMaisProximo) nunca enxergavam o player2.
-    // Reaproveitamos o jogadoresAtivos já calculado acima, sem criar nenhuma variável nova.
     contextoDoJogo.jogadores = jogadoresAtivos;
     contextoDoJogo.temDoisJogadores = jogadoresAtivos.length > 1;
 
-    //. Roda as armas passando a LISTA INTEIRA de uma só vez (resolve o erro!)
     let disparosFeitos = [];
-    if (!menuLevelUpAtivo.ativo) {
+    if (!menuLevelUpAtivo) {
         disparosFeitos = sistemaArmas.updateWeapons(deltaTime, jogadoresAtivos, inimigos) || [];
     }
 
@@ -1393,7 +1477,7 @@ function main(tempoAtual) {
 
     desenha()
     atualizarEdesenharTransicaoFade(deltaTime); // Desenha o overlay de fade por cima de tudo, se estiver ativo
-    atualiza(menuLevelUpAtivo.ativo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
+    atualiza(menuLevelUpAtivo ? 0 : deltaTime, disparosFeitos) // Envia o tempo rodado para atualizar as armas corretamente
 
     requestAnimationFrame(main);
 }

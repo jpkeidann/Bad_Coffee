@@ -18,8 +18,8 @@ const catalogoGlobal = [
         somDisparo: "../sound/lightsaber.mp3"
     },
     {
-        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, cooldown: 3100, damage: 3, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
-        orbitRadius: 150, spinSpeed: 2, orbitDuration: 3100,
+        id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, damage: 3, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
+        orbitRadius: 150, spinSpeed: 2,
         projectileW: 87, projectileH: 51
     },
     {
@@ -222,6 +222,11 @@ class GameSystem {
         let weaponsThatFired = [];
 
         this.weapons.forEach(weapon => {
+            // A Adaga (shootBehavior 'orbit') não usa cooldown: ela fica sempre ativa,
+            // girando em volta do jogador. Quem cria/sincroniza as lâminas dela agora é
+            // a função sincronizarAdagas() no index.js, então aqui a gente só pula ela.
+            if (weapon.shootBehavior === 'orbit') return;
+
             weapon.timer += deltaTime; // Conta o tempo da arma UMA ÚNICA VEZ
 
             if (weapon.timer >= weapon.cooldown) {
@@ -239,7 +244,7 @@ class GameSystem {
                         targetEnemy = this.findClosestEnemy(atirador, enemiesList);
                     }
 
-                    if (targetEnemy || weapon.shootBehavior === 'orbit') {
+                    if (targetEnemy) {
                         alguemAtirou = true;
                         weaponsThatFired.push({
                             atirador: atirador,
