@@ -62,6 +62,19 @@ imgBarraInventario.src = "../Img/barra_item.png";
 const imgBackground = new Image();
 imgBackground.src = "../Img/Background.png";
 
+// Um background por FASE. Índice 0 = Fase 1, 1 = Fase 2, 2 = Fase 3.
+const imgBackground2 = new Image();
+imgBackground2.src = "../Img/Background2.png";
+
+const imgBackground3 = new Image();
+imgBackground3.src = "../Img/Background3.png";
+
+const imagensFundoPorFase = [imgBackground, imgBackground2, imgBackground3];
+
+// Controla qual background é desenhado. Só é atualizada junto com o início do fade
+// (tela já coberta pelo overlay), pra esconder a troca em vez de mostrar na cara.
+let faseVisual = 1;
+
 const imgXicara = new Image();
 imgXicara.src = "../Img/xicara.png";
 
@@ -978,8 +991,13 @@ function verificarFimDaWave() {
             timerMensagemWave = delayTransicaoFase;
             faseAtual++;
             waveAtual = 1;
-            // Espera "delayTransicaoFase" ms mostrando o texto antes de iniciar a transição de tela
-            setTimeout(iniciarTransicaoFade, delayTransicaoFase);
+            // Espera "delayTransicaoFase" ms mostrando o texto antes de iniciar a transição de tela.
+            // A troca do background (faseVisual) só acontece junto com o início do fade,
+            // já com a tela coberta pelo overlay — por isso não usamos faseAtual direto no desenho.
+            setTimeout(() => {
+                faseVisual = faseAtual;
+                iniciarTransicaoFade();
+            }, delayTransicaoFase);
         } else {
             // Caso contrário, apenas avança para a próxima Wave dentro da mesma Fase
             textoMensagemWave = "WAVE CONCLUÍDA!";
@@ -1268,15 +1286,24 @@ window.addEventListener('click', () => {
 });
 
 function desenha() {
-    if (imgBackground.complete) {
-        des.drawImage(imgBackground, 0, 0, canvas.width, canvas.height);
+    // Escolhe o background de acordo com a FASE atual (1, 2 ou 3). Se por algum motivo
+    // a imagem daquela fase ainda não carregou, cai pro Background.png padrão.
+    let fundoDaFase = imagensFundoPorFase[faseVisual - 1] || imgBackground;
+    if (!fundoDaFase.complete || fundoDaFase.naturalWidth === 0) {
+        fundoDaFase = imgBackground;
+    }
+
+    if (fundoDaFase.complete && fundoDaFase.naturalWidth !== 0) {
+        des.drawImage(fundoDaFase, 0, 0, canvas.width, canvas.height);
     } else {
         des.fillStyle = "#2c3e50";
         des.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    player.des_player();
-    player.desenharBarraVida(des);
+    if (player.vidaAtual > 0) {
+        player.des_player();
+        player.desenharBarraVida(des);
+    }
     desenharEfeitosArmas();
     desenharTiros();
 
