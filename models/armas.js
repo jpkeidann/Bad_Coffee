@@ -5,7 +5,7 @@ const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de 
 const catalogoGlobal = [
     // --- ARMAS ---
     { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 12, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24, somDisparo: "../sound/p320 shot.mp3" },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 900, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36, somDisparo: "../sound/mp5 shot.mp3" },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 900, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, intervaloRajada: 100, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36, somDisparo: "../sound/mp5 shot.mp3" },
     { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 8, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36, somDisparo: "../sound/ks shot.mp3" },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
@@ -226,6 +226,40 @@ class GameSystem {
             // girando em volta do jogador. Quem cria/sincroniza as lâminas dela agora é
             // a função sincronizarAdagas() no index.js, então aqui a gente só pula ela.
             if (weapon.shootBehavior === 'orbit') return;
+            
+            if (weapon.tirosRestantesRajada > 0) {
+                weapon.timerRajada += deltaTime;
+
+                if (weapon.timerRajada >= (weapon.intervaloRajada || 100)) {
+                    weapon.timerRajada = 0;
+                    weapon.tirosRestantesRajada--;
+
+                    jogadoresAtivos.forEach(atirador => {
+                        let targetEnemy = this.findClosestEnemy(atirador, enemiesList);
+                        if (!targetEnemy) return;
+
+                        let isCrit = Math.random() < this.critChance;
+                        let finalDamage = weapon.damage;
+                        if (isCrit) finalDamage = Math.floor(finalDamage * this.critMultiplier);
+
+                        weaponsThatFired.push({
+                            atirador: atirador,
+                            id: weapon.id,
+                            projectileType: weapon.projectileType,
+                            projectileSpeed: weapon.projectileSpeed,
+                            damage: finalDamage,
+                            isCritical: isCrit,
+                            target: targetEnemy,
+                            shootBehavior: weapon.shootBehavior,
+                            bulletImgSrc: weapon.bulletImgSrc,
+                            projectileCount: weapon.projectileCount,
+                            spinSpeed: weapon.spinSpeed
+                        });
+                    });
+                }
+
+                return; // enquanto a rajada não terminar, não mexe no cooldown principal
+            }
 
             weapon.timer += deltaTime; // Conta o tempo da arma UMA ÚNICA VEZ
 
@@ -264,6 +298,14 @@ class GameSystem {
 
                 if (alguemAtirou) {
                     weapon.timer = 0;
+
+                    // Se a arma dispara mais de 1 projétil em sequência (a MP5, por
+                    // exemplo), agenda o resto da rajada pros próximos frames em vez
+                    // de soltar todos juntos agora.
+                    if (weapon.shootBehavior === 'sequence' && weapon.projectileCount > 1) {
+                        weapon.tirosRestantesRajada = weapon.projectileCount - 1;
+                        weapon.timerRajada = 0;
+                    }
                 }
             }
         });

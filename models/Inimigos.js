@@ -17,35 +17,36 @@ const TIPOS_INIMIGOS = {
         id: "broca", 
         nome: "Broca-do-Café", 
         largura: 96, altura: 63, 
-        velocidade: 1, 
+        velocidade: 1.2, 
         vida: 35, 
         dano: 10, 
         xp: 10, 
         knockbackResistencia: 0.5, 
         img: "../Img/broca.png", 
         frames: 11, 
-        tempoFrame: 100
+        tempoFrame: 150
     },
-    bichoMineiro: { 
-        id: "bichoMineiro", 
-        nome: "Bicho-Mineiro", 
-        largura: 104, 
-        altura: 64, 
-        velocidade: 1.2, 
-        vida: 20, 
-        dano: 0, 
-        xp: 20, 
-        knockbackResistencia: 0.3, 
-        img: "../Img/bichoMineiro.png", 
-        frames: 4, 
-        tempoFrame: 200 
+    bichoMineiro: {
+        id: "bichoMineiro",
+        nome: "Bicho-Mineiro",
+        largura: 104,
+        altura: 64,
+        velocidade: 1.5,
+        vida: 20,
+        dano: 0,
+        xp: 20,
+        knockbackResistencia: 0.3,
+        img: "../Img/bichoMineiro.png",
+        frames: 4,
+        tempoFrame: 200,
+        distanciaDeAndar: 400 // px que ele anda antes de parar de vez e começar a spawnar larvas
     },
     larva: { 
         id: "larva",
         nome: "Larva Mineira",  
         largura: 44, 
         altura: 13, 
-        velocidade: 3.5, 
+        velocidade: 4, 
         vida: 1, 
         dano: 3, 
         xp: 1, 
@@ -54,38 +55,50 @@ const TIPOS_INIMIGOS = {
         frames: 5, 
         tempoFrame: 100 
     },
-    ninfa: { 
+    ninfa: {
         id: "ninfa",
-        nome: "Ninfa",  
-        largura: 75, 
-        altura: 50, 
-        vida: 20, 
-        dano: 10, 
-        xp: 16, 
-        knockbackResistencia: 0, 
-        img: "../Img/ninfa.png", 
-        frames: 3, 
-        tempoFrame: 10 
+        nome: "Ninfa",
+        largura: 75,
+        altura: 50,
+        vida: 20,
+        dano: 10,
+        xp: 16,
+        knockbackResistencia: 0,
+        img: "../Img/ninfa.png",
+        frames: 3,
+        tempoFrame: 10,
+
+        // --- Animação de nascimento (a ninfa sai cavando a terra) ---
+        // Toca UMA vez, com a ninfa parada, antes dela começar a andar atrás do jogador.
+        imgSpawn: "../Img/ninfa_cavando.png",
+        framesSpawn: 7,        // ninfa_cavando.png tem 7 quadros
+        tempoFrameSpawn: 180,  // ms por quadro -> 7 x 180 = 1,26s de animação. Mude aqui pra deixar mais rápido/lento.
+        spawnEspelhado: true   // ninfa_cavando.png está virado ao contrário do ninfa.png, então é desenhado espelhado
     },
-    cigarraBoss: { 
-        id: "boss", 
+    cigarraBoss: {
+        id: "boss",
         nome: "Quesada Gigas",
-        largura: 160, 
-        altura: 160, 
-        velocidade: 1.0, 
-        vida: 1500, 
-        dano: 20, 
-        xp: 0, 
-        knockbackResistencia: 1.0, 
-        img: "../Img/quesadagigas.png", 
-        frames: 1, 
-        tempoFrame: 150 
+        largura: 160,
+        altura: 160,
+        velocidade: 1.0,
+        vida: 1500,
+        dano: 20,
+        xp: 0,
+        knockbackResistencia: 1.0,
+        img: "../Img/quesadagigas.png",
+        frames: 1,
+        tempoFrame: 150,
+
+        // --- Invocação de ninfas ---
+        intervaloSpawnNinfas: 5000, // ms entre uma leva de ninfas e a próxima. AUMENTE pra spawnar menos vezes, DIMINUA pra spawnar mais.
+        ninfasPorLeva: 9            // quantas ninfas nascem de uma vez
     }
 };
 
 // ==========================================
-// 10. CLASSE INIMIGO UNIFICADA
+// 1. CLASSE INIMIGO UNIFICADA
 // ==========================================
+
 class Inimigo {
     constructor(x, y, w, h, imgCaminho, configuracao, jogo) {
         if (imgCaminho && typeof imgCaminho === "object") {
@@ -123,12 +136,36 @@ class Inimigo {
         this.danoContato = configuracao.dano || 1;
         this.xpRecompensa = configuracao.xp || 5;
 
-        this.totalFrames = configuracao.frames || 1; 
-        this.frameAtual = 0;                         
-        this.tempoPorFrame = configuracao.tempoFrame || 150; 
-        this.timerAnimacao = 0;                      
-        this.timerHabilidade = 0; 
-        this.viradoParaEsquerda = false;             
+        this.totalFrames = configuracao.frames || 1;
+        this.frameAtual = 0;
+        this.tempoPorFrame = configuracao.tempoFrame || 150;
+        this.timerAnimacao = 0;
+        this.timerHabilidade = 0;
+        this.viradoParaEsquerda = false;
+
+        // --- Animação de nascimento (opcional, vem do TIPOS_INIMIGOS) ---
+        // Se o tipo do inimigo tiver uma "imgSpawn", ele nasce no estado "spawnando":
+        // fica parado tocando essa animação uma única vez e só depois começa a andar.
+        // Quem não tiver imgSpawn continua nascendo direto no estado "ativo", como antes.
+        this.imgSpawn = null;
+        this.totalFramesSpawn = configuracao.framesSpawn || 1;
+        this.tempoPorFrameSpawn = configuracao.tempoFrameSpawn || 120;
+        this.spawnEspelhado = configuracao.spawnEspelhado === true;
+        this.timerSpawn = 0;
+
+        if (configuracao.imgSpawn) {
+            this.imgSpawn = new Image();
+            this.imgSpawn.onerror = () => {
+                // Se o spritesheet de nascimento falhar, o inimigo entra direto no jogo
+                // em vez de ficar parado e invisível esperando uma animação que não existe.
+                console.error(`[Erro de Sprite] Falha ao carregar a animação de spawn em: ${this.imgSpawn.src}`);
+                this.estado = "ativo";
+            };
+            this.imgSpawn.src = configuracao.imgSpawn;
+
+            this.estado = "spawnando";
+            this.frameAtual = 0;
+        }
 
         this.knockbackResistencia = configuracao.knockbackResistencia || 0;
         this.velKnockbackX = 0;
@@ -195,6 +232,13 @@ class Inimigo {
     }
 
     atualizarI(listaInimigos, tirosInimigosNaTela, deltaTime) {
+        // Enquanto a animação de nascimento não acabar, o inimigo fica parado:
+        // não persegue o jogador, não empurra os outros e não causa dano por contato.
+        if (this.estado === "spawnando") {
+            this.atualizarAnimacaoDeSpawn(deltaTime);
+            return;
+        }
+
         this.timerAnimacao += deltaTime;
         if (this.timerAnimacao >= this.tempoPorFrame) {
             this.timerAnimacao = 0;
@@ -213,11 +257,19 @@ class Inimigo {
             return; 
         }
 
-        if (this.nome === "Bicho-Mineiro" && this.jogo && typeof this.jogo.spawnarLarvas === "function") {
-            this.timerHabilidade += deltaTime;
-            if (this.timerHabilidade >= 4000) { 
-                this.timerHabilidade = 0;
-                this.jogo.spawnarLarvas(this.x, this.y, 1);
+        // Bicho-Mineiro: anda até TIPOS_INIMIGOS.bichoMineiro.distanciaParaMinerar px
+        // (contados logo abaixo, junto do movimento) e então para DE VEZ, ficando
+        // parado ali e soltando larvas periodicamente.
+        if (this.nome === "Bicho-Mineiro") {
+            if (this.distanciaAndada === undefined) this.distanciaAndada = 0;
+            if (this.paradoSpawnando === undefined) this.paradoSpawnando = false;
+
+            if (this.paradoSpawnando && this.jogo ) {
+                this.timerHabilidade += deltaTime;
+                if (this.timerHabilidade >= 2000) {
+                    this.timerHabilidade = 0;
+                    this.jogo.spawnarLarvas(this.x, this.y, 1);
+                }
             }
         }
 
@@ -228,7 +280,9 @@ class Inimigo {
 
         this.definirAlvoMaisProximo();
 
-        if (this.alvo && Math.abs(this.velKnockbackX) < 0.5 && Math.abs(this.velKnockbackY) < 0.5) {
+        let bichoMineiroParado = this.nome === "Bicho-Mineiro" && this.paradoSpawnando;
+
+        if (this.alvo && Math.abs(this.velKnockbackX) < 0.5 && Math.abs(this.velKnockbackY) < 0.5 && !bichoMineiroParado) {
             let dx = this.alvo.x - this.x;
             let dy = this.alvo.y - this.y;
             let distancia = Math.sqrt(dx * dx + dy * dy);
@@ -237,8 +291,18 @@ class Inimigo {
             else if (dx > 0) this.viradoParaEsquerda = false;
 
             if (distancia > 0) {
-                this.x += (dx / distancia) * this.velocidadeBase;
-                this.y += (dy / distancia) * this.velocidadeBase;
+                let passoX = (dx / distancia) * this.velocidadeBase;
+                let passoY = (dy / distancia) * this.velocidadeBase;
+                this.x += passoX;
+                this.y += passoY;
+
+                if (this.nome === "Bicho-Mineiro") {
+                    this.distanciaAndada += Math.hypot(passoX, passoY);
+                    if (this.distanciaAndada >= (TIPOS_INIMIGOS.bichoMineiro.distanciaDeAndar || 300)) {
+                        this.paradoSpawnando = true;
+                        this.timerHabilidade = 0; // já solta a primeira larva contando a partir de agora
+                    }
+                }
             }
 
             if (this.verificarColisaoComAlvo()) {
@@ -288,6 +352,33 @@ class Inimigo {
                     this.y += (ey / distInimigos) * forcaRepulsao * this.velocidadeBase * 0.5;
                 }
             }
+        }
+    }
+
+    // Toca a animação de nascimento UMA vez (sem loop). Quando o último quadro
+    // termina, o inimigo passa para "ativo" e volta a usar o spritesheet normal de andar.
+    atualizarAnimacaoDeSpawn(deltaTime) {
+        // O flash de dano continua rodando: a ninfa já pode levar tiro enquanto cava,
+        // então o jogador precisa ver o hit registrando.
+        if (this.timerFlashDano > 0) {
+            this.timerFlashDano -= deltaTime;
+            if (this.timerFlashDano < 0) this.timerFlashDano = 0;
+        }
+
+        // Já nasce olhando pro jogador mais próximo, pra não ter uma virada
+        // brusca no instante em que ela começa a andar.
+        this.definirAlvoMaisProximo();
+        if (this.alvo) {
+            this.viradoParaEsquerda = (this.alvo.x - this.x) < 0;
+        }
+
+        this.timerSpawn += deltaTime;
+        this.frameAtual = Math.floor(this.timerSpawn / this.tempoPorFrameSpawn);
+
+        if (this.frameAtual >= this.totalFramesSpawn) {
+            this.frameAtual = 0;
+            this.timerAnimacao = 0;
+            this.estado = "ativo";
         }
     }
 
@@ -343,7 +434,7 @@ class Inimigo {
             this.y += (dy / distCentro) * (this.velocidadeBase * 2);
         }
 
-        // VERIFICAÇÃO DE HITBOX: Causa dano instantâneo no jogador ao toque
+        // VERIFICAÇÃO DE HITBOX:
         if (this.alvo && this.verificarColisaoComAlvo()) {
             this.atacarAlvo();
             
@@ -353,17 +444,17 @@ class Inimigo {
             }
         }
 
+        // Invocação de ninfas. Os dois números (intervalo e quantidade) ficam
+        // em TIPOS_INIMIGOS.cigarraBoss, lá no topo deste arquivo.
+        let configBoss = TIPOS_INIMIGOS.cigarraBoss;
+        let intervaloEntreLevas = configBoss.intervaloSpawnNinfas || 5000;
+
         this.timerAtaqueBoss += deltaTime;
-        if (this.timerAtaqueBoss >= 5000) { 
+        if (this.timerAtaqueBoss >= intervaloEntreLevas) {
             this.timerAtaqueBoss = 0;
-            
-            console.log("🔥 BOSS: Invocando ninfas no campo de batalha!");
-            
-            let centroX = this.x + (this.w / 2);
-            let centroY = this.y + (this.h / 2);
 
             if (this.jogo && typeof this.jogo.spawnarNinfas === "function") {
-                this.jogo.spawnarNinfas(centroX, centroY, 6); 
+                this.jogo.spawnarNinfas(configBoss.ninfasPorLeva || 9);
             }
         }
     }
@@ -412,7 +503,45 @@ class Inimigo {
         }
     }
     
+    // Desenha um quadro da animação de nascimento (ex: a ninfa saindo da terra).
+    desenharAnimacaoDeSpawn(contexto) {
+        if (!this.imgSpawn || !this.imgSpawn.complete || this.imgSpawn.naturalWidth === 0) return;
+
+        let larguraFrame = this.imgSpawn.naturalWidth / this.totalFramesSpawn;
+        let alturaFrame = this.imgSpawn.naturalHeight;
+
+        // Trava no último quadro por segurança, caso o timer passe do fim antes da troca de estado
+        let quadro = Math.min(this.frameAtual, this.totalFramesSpawn - 1);
+
+        contexto.save();
+        contexto.translate(this.x + this.w / 2, this.y + this.h / 2);
+
+        // O spritesheet de nascimento pode estar virado ao contrário do spritesheet
+        // de andar — é o caso do ninfa_cavando.png. Quando spawnEspelhado é true a
+        // virada é invertida, pra que os dois terminem apontando pro mesmo lado e a
+        // ninfa não "dê um flip" no instante em que começa a andar.
+        let precisaVirar = this.spawnEspelhado ? !this.viradoParaEsquerda : this.viradoParaEsquerda;
+        if (precisaVirar) contexto.scale(-1, 1);
+
+        if (this.timerFlashDano > 0) {
+            contexto.globalAlpha = this.opacidadeFlashDano;
+        }
+
+        contexto.drawImage(
+            this.imgSpawn,
+            quadro * larguraFrame, 0, larguraFrame, alturaFrame,
+            -this.w / 2, -this.h / 2, this.w, this.h
+        );
+        contexto.restore();
+    }
+
     desenhar(contexto) {
+        // --- 0. ANIMAÇÃO DE NASCIMENTO (ninfa saindo da terra) ---
+        if (this.estado === "spawnando") {
+            this.desenharAnimacaoDeSpawn(contexto);
+            return;
+        }
+
         // --- 1. COMPORTAMENTO VISUAL DO SURGIMENTO ---
         if (this.estado === "surgindo") {
             let progresso = this.timerSurgimento / this.tempoSurgimentoTotal;

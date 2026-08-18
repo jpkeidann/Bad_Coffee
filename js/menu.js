@@ -10,8 +10,8 @@ const configMenu = {
     corBotao: "#333333",
     corBotaoHover: "#666666", // Cor quando o mouse passa por cima
     corTexto: "white",
-    fonteTitulo: "60px Arial",
-    fonteBotao: "30px Arial"
+    fonteTitulo: "60px VCROSDMono, Arial",
+    fonteBotao: "30px VCROSDMono, Arial"
 };
 
 // Posição do mouse para sabermos se está em cima do botão
@@ -43,6 +43,13 @@ window.addEventListener('mousemove', (e) => {
     // Gerencia a mudança do cursor (mãozinha 'pointer' ao passar por cima de botões ou links)
     let hoverAtivo = false;
 
+    // Durante a transição os cliques estão bloqueados, então o cursor também
+    // não deve indicar que dá pra clicar.
+    if (typeof transicaoEmAndamento === 'function' && transicaoEmAndamento()) {
+        document.body.style.cursor = 'default';
+        return;
+    }
+
     if (estadoJogo === 'MENU') {
         botoesMenu.forEach(botao => {
             if (mouseX >= botao.x && mouseX <= botao.x + botao.w &&
@@ -71,19 +78,21 @@ window.addEventListener('mousemove', (e) => {
 
 // Detecta o clique nos botões do menu e na tela "Sobre"
 window.addEventListener('click', (e) => {
+    // Ignora cliques enquanto a transição de tela está rodando, senão dá pra
+    // trocar de tela no meio da animação de carregamento.
+    if (typeof transicaoEmAndamento === 'function' && transicaoEmAndamento()) return;
+
     if (estadoJogo === 'MENU') {
         botoesMenu.forEach(botao => {
             if (mouseX >= botao.x && mouseX <= botao.x + botao.w &&
                 mouseY >= botao.y && mouseY <= botao.y + botao.h) {
 
+                // A troca de estado e a música agora acontecem dentro de
+                // iniciarJogoComCarregamento(), só depois que a tela ficar preta.
                 if (botao.id === '1P') {
-                    estadoJogo = 'JOGANDO_1P';
-                    if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
-                    if (typeof tocarMusicaFase === 'function') tocarMusicaFase("../music/fuel-abbynoise-main-version-02-28-17433.mp3");
+                    iniciarJogoComCarregamento('JOGANDO_1P');
                 } else if (botao.id === '2P') {
-                    estadoJogo = 'JOGANDO_2P';
-                    if (typeof iniciarTransicaoFade === 'function') iniciarTransicaoFade();
-                    if (typeof tocarMusicaFase === 'function') tocarMusicaFase("../music/fuel-abbynoise-main-version-02-28-17433.mp3");
+                    iniciarJogoComCarregamento('JOGANDO_2P');
                 } else if (botao.id === 'SOBRE') {
                     estadoJogo = 'SOBRE';
                 }
@@ -147,11 +156,11 @@ function desenharMenu() {
 // registrando a área de clique em linksGitHub. Retorna o Y seguinte, já espaçado.
 function desenharCardPessoa(pessoa, x, yAtual) {
     des.fillStyle = "white";
-    des.font = "bold 16px Arial";
+    des.font = "bold 16px VCROSDMono, Arial";
     des.fillText(pessoa.nome, x, yAtual);
 
     yAtual += 20;
-    des.font = "13px Arial";
+    des.font = "13px VCROSDMono, Arial";
 
     // Medição do texto para definir o local exato onde o clique será ativado
     const metricasTexto = des.measureText(pessoa.displayLink);
@@ -190,7 +199,7 @@ function desenharSobre() {
 
     // Título Principal
     des.fillStyle = "#FFD700"; // Título dourado
-    des.font = "bold 45px Arial";
+    des.font = "bold 45px VCROSDMono, Arial";
     des.textAlign = "center";
     des.fillText("SOBRE O JOGO & COMO JOGAR", canvas.width / 2, 70);
 
@@ -206,16 +215,16 @@ function desenharSobre() {
     let y = 140;
     des.textAlign = "left";
     des.fillStyle = "#FF5555"; // Título de Seção Vermelho
-    des.font = "bold 24px Arial";
+    des.font = "bold 24px VCROSDMono, Arial";
     des.fillText(" COMO JOGAR", colLeftX, y);
     
     y += 30;
     des.fillStyle = "white";
-    des.font = "bold 16px Arial";
+    des.font = "bold 16px VCROSDMono, Arial";
     des.fillText("Objetivo Principal:", colLeftX, y);
     
     y += 22;
-    des.font = "14px Arial";
+    des.font = "14px VCROSDMono, Arial";
     des.fillStyle = "#CCCCCC";
     des.fillText("Sobreviva ao ataque implacável de ondas de inimigos.", colLeftX, y);
     y += 20;
@@ -225,26 +234,26 @@ function desenharSobre() {
     
     y += 35;
     des.fillStyle = "white";
-    des.font = "bold 16px Arial";
+    des.font = "bold 16px VCROSDMono, Arial";
     des.fillText("Controles - Jogador 1 (Solo ou Coop):", colLeftX, y);
     y += 22;
-    des.font = "14px Arial";
+    des.font = "14px VCROSDMono, Arial";
     des.fillStyle = "#CCCCCC";
     des.fillText("• Teclas [ W, A, S, D ] para se movimentar.", colLeftX, y);
     
     y += 35;
     des.fillStyle = "white";
-    des.font = "bold 16px Arial";
+    des.font = "bold 16px VCROSDMono, Arial";
     des.fillText("Controles - Jogador 2 (Cooperativo):", colLeftX, y);
     y += 22;
-    des.font = "14px Arial";
+    des.font = "14px VCROSDMono, Arial";
     des.fillStyle = "#CCCCCC";
     des.fillText("• Teclas [ SETAS ] do teclado para se movimentar.", colLeftX, y);
 
     // --- TRILHA SONORA / LICENÇAS (créditos exigidos pelo Uppbeat) ---
     y += 35;
     des.fillStyle = "#9B59B6"; // Título de Seção Roxo
-    des.font = "bold 18px Arial";
+    des.font = "bold 18px VCROSDMono, Arial";
     des.fillText("🎵 TRILHA SONORA", colLeftX, y);
     y += 30;
 
@@ -261,12 +270,12 @@ function desenharSobre() {
     // --- COLUNA 2: DESENVOLVEDORES (DIREITA) ---
     y = 140;
     des.fillStyle = "#55FF55"; // Título de Seção Verde
-    des.font = "bold 24px Arial";
+    des.font = "bold 24px VCROSDMono, Arial";
     des.fillText(" DESENVOLVEDORES", colRightX, y);
     
     y += 30;
     des.fillStyle = "#CCCCCC";
-    des.font = "14px Arial";
+    des.font = "14px VCROSDMono, Arial";
     des.fillText("Projeto desenvolvido com muito café por:", colRightX, y);
     
     // Lista estruturada com os nomes reais e perfis reais fornecidos
@@ -285,11 +294,11 @@ function desenharSobre() {
     // --- DONO DO PROJETO ---
     y += 15;
     des.fillStyle = "#FFD700"; // Título de Seção Dourado
-    des.font = "bold 18px Arial";
+    des.font = "bold 18px VCROSDMono, Arial";
     des.fillText(" DONO DO PROJETO", colRightX, y);
     y += 30;
 
-    const donoProjeto = { nome: "Professor Carlos Senai", displayLink: "github.com/Prof-Carlos-Senai", url: "https://github.com/Prof-Carlos-Senai" };
+    const donoProjeto = { nome: "Professor Carlos Roberto Da Silva Filho", displayLink: "github.com/Prof-Carlos-Senai", url: "https://github.com/Prof-Carlos-Senai" };
     y = desenharCardPessoa(donoProjeto, colRightX, y);
 
     // --- BOTÃO VOLTAR (RODAPÉ) ---
@@ -311,14 +320,14 @@ function desenharSobre() {
     des.strokeRect(botaoVoltar.x, botaoVoltar.y, botaoVoltar.w, botaoVoltar.h);
     
     des.fillStyle = "white";
-    des.font = "bold 16px Arial";
+    des.font = "bold 16px VCROSDMono, Arial";
     des.textAlign = "center";
     des.textBaseline = "middle";
     des.fillText("VOLTAR AO MENU", botaoVoltar.x + botaoVoltar.w / 2, botaoVoltar.y + botaoVoltar.h / 2);
     
     // Texto de apoio informativo
     des.fillStyle = "#888888";
-    des.font = "12px Arial";
+    des.font = "12px VCROSDMono, Arial";
     des.fillText("(Clique no botão ou em qualquer lugar da tela para voltar)", canvas.width / 2, canvas.height - 20);
     
     // Reseta configurações padrões para as próximas telas

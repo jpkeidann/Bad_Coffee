@@ -1,3 +1,8 @@
+       @font-face {
+           font-family: 'VCROSDMono';
+           src: url('../fonts/VCR_OSD_MONO.ttf') format('truetype');
+       }
+
        * {
            margin: 0;
            padding: 0;
@@ -7,7 +12,7 @@
        body {
            overflow: hidden;
            background-color: #111;
-           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+           font-family: 'VCROSDMono', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
        }
 
        /* Interface simples por cima do canvas */
