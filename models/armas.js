@@ -1,12 +1,16 @@
 // - effectW / effectH: tamanho do sprite da arma exibido na mão ao atirar
-// - projectileW / projectileH: tamanho do projétil/bala desenhado na tela
+// - projectileW / projectileH: tamanho do projétil/bala DESENHADO na tela
+// - hitboxW / hitboxH: tamanho da ÁREA DE ACERTO da bala (o que realmente causa dano).
+//   É um retângulo alinhado aos eixos, centrado no meio da bala. Aumente pra a arma
+//   acertar mais fácil, diminua pra exigir mais mira. Se a arma não tiver esses campos,
+//   o jogo cai no projectileW / projectileH como tamanho de acerto.
 const tamanhoIconeEscolha = 45; // Tamanho (px) do ícone na tela de escolha de armas (menu de level up)
 
 const catalogoGlobal = [
     // --- ARMAS ---
-    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 12, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24, somDisparo: "../sound/p320 shot.mp3" },
-    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 900, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, intervaloRajada: 100, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36, somDisparo: "../sound/mp5 shot.mp3" },
-    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 8, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36, somDisparo: "../sound/ks shot.mp3" },
+    { id: 'p320', name: 'Pistola P320', type: 'weapon', maxLevel: 5, cooldown: 1250, damage: 12, projectileSpeed: 400, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/p320.png", bulletImgSrc: "../Img/bala.png", effectW: 32, effectH: 18, projectileW: 24, projectileH: 24, hitboxW: 24, hitboxH: 24, somDisparo: "../sound/p320 shot.mp3" },
+    { id: 'mp5', name: 'Metralhadora MP5', type: 'weapon', maxLevel: 5, cooldown: 900, damage: 3, projectileSpeed: 600, projectileType: 'bullet', shootBehavior: 'sequence', projectileCount: 3, intervaloRajada: 100, imgSrc: "../Img/armas/mp5.png", bulletImgSrc: "../Img/bala.png", effectW: 51, effectH: 24, projectileW: 36, projectileH: 36, hitboxW: 36, hitboxH: 36, somDisparo: "../sound/mp5 shot.mp3" },
+    { id: 'ks_23', name: 'Escopeta KS-23', type: 'weapon', maxLevel: 5, cooldown: 1750, damage: 8, projectileSpeed:2000, projectileType: 'pellet', shootBehavior: 'cone', projectileCount: 3, imgSrc: "../Img/armas/KS-23.png", bulletImgSrc: "../Img/bala.png", effectW: 66, effectH: 17, projectileW: 48, projectileH: 36, hitboxW: 48, hitboxH: 36, somDisparo: "../sound/ks shot.mp3" },
 
     // Sabre de luz e Adaga com hideEffect: true para não piscarem na mão
     {
@@ -15,15 +19,23 @@ const catalogoGlobal = [
         throwTime: 1200,  // Tempo total (em milissegundos) que ele leva para ir e voltar
         spinSpeed: 20,    // Velocidade do giro da lâmina
         projectileW: 120, projectileH: 14,
+        // A hitbox NÃO acompanha o giro da lâmina (é sempre alinhada aos eixos), por isso
+        // ela é quadrada e menor que o sprite: um retângulo fino girando erraria demais.
+        hitboxW: 90, hitboxH: 90,
         somDisparo: "../sound/lightsaber.mp3"
     },
     {
         id: 'dagger', name: 'Adaga', type: 'weapon', maxLevel: 5, damage: 3, projectileSpeed: 350, projectileType: 'spin', shootBehavior: 'orbit', projectileCount: 1, imgSrc: "../Img/armas/adaga.png", bulletImgSrc: "../Img/armas/adaga.png", hideEffect: true,
         orbitRadius: 150, spinSpeed: 2,
-        projectileW: 87, projectileH: 51
+        projectileW: 87, projectileH: 51,
+        hitboxW: 87, hitboxH: 51
     },
     {
         id: 'gjallahorn', name: 'Gjallahorn', type: 'weapon', maxLevel: 5, cooldown: 7000, damage: 50, projectileSpeed: 400, projectileType: 'big_boom', shootBehavior: 'sequence', projectileCount: 1, imgSrc: "../Img/armas/gjahllahorn.png", bulletImgSrc: "../Img/tiroGjahllahorn.png", effectW: 106, effectH: 38, projectileW: 100, projectileH: 40,
+        hitboxW: 100, hitboxH: 40,
+        // Área de dano da EXPLOSÃO (o foguete em si usa hitboxW/hitboxH acima).
+        // Também é um retângulo centrado no ponto do impacto.
+        explosionW: 240, explosionH: 240,
         somDisparo: "../sound/gjalahorn fire.mp3",
         somMidair: "../sound/gjalahorn midair.mp3",
         somExplosao: "../sound/gjalahorn kaboom.mp3"
@@ -35,6 +47,40 @@ const catalogoGlobal = [
     { id: 'leite', name: 'Leite', type: 'passive', maxLevel: 5, description: 'Faz o café ter um regen maior.', imgSrc: "../Img/milk.png" },
     { id: 'casca', name: 'Casca de Café', type: 'passive', maxLevel: 5, description: 'Faz o café ter mais vida.', imgSrc: "../Img/casca.png" }
 ];
+
+// ==========================================
+// GANHOS DE CADA NÍVEL DE UPGRADE DAS ARMAS
+// ==========================================
+// FONTE ÚNICA da verdade: é exatamente isto que buyItem() aplica na arma E o que a
+// carta de level up mostra pro jogador. Antes esses números viviam duplicados em dois
+// lugares (uma cadeia de if no buyItem e uma tabela no generateChoices), então dava pra
+// mudar um e esquecer o outro — a carta prometia um valor e o jogo entregava outro.
+//
+// Cada valor é SOMADO ao atributo atual da arma. Use negativo pra diminuir
+// (é o caso do cooldown, onde menos = atira mais rápido).
+const UPGRADES_POR_ARMA = {
+    p320:       { damage: 5,  cooldown: -50 },
+    mp5:        { damage: 1,  cooldown: -25 },
+    ks_23:      { damage: 12 },
+    lightsaber: { damage: 15, cooldown: -75,  projectileSpeed: 100 },
+    gjallahorn: { damage: 20, cooldown: -125, projectileSpeed: 150 },
+
+    // ATENÇÃO ao mexer no dano da Adaga: ela é a única arma que também ganha
+    // +1 projétil por nível, e dano x quantidade se MULTIPLICAM. Subir o dano em +7
+    // (valor antigo) levava ela a ~205 de DPS no nível 5, contra 21 a 112 das outras.
+    // Com +2 ela fecha em ~73, na mesma faixa do Sabre de Luz.
+    dagger:     { damage: 2,  projectileSpeed: 150, projectileCount: 1, spinSpeed: 1.5 }
+};
+
+// Aplica na arma os ganhos de UPGRADES_POR_ARMA, somando atributo por atributo.
+function aplicarUpgradeDeArma(arma) {
+    const ganhos = UPGRADES_POR_ARMA[arma.id];
+    if (!ganhos) return;
+
+    Object.keys(ganhos).forEach(atributo => {
+        arma[atributo] = (arma[atributo] || 0) + ganhos[atributo];
+    });
+}
 
 class GameSystem {
     constructor() {
@@ -92,30 +138,9 @@ class GameSystem {
                 existing.level++;
 
                 // === AQUI ACONTECE A MAGIA DO UPGRADE! ===
+                // Os números de cada arma estão em UPGRADES_POR_ARMA, no topo do arquivo.
                 if (chosenItem.type === 'weapon') {
-                    if (existing.id === 'p320') {
-                        existing.damage += 5;
-                        existing.cooldown -= 50;
-                    } else if (existing.id === 'ks_23') {
-                        existing.damage += 12;
-                    } else if (existing.id === 'mp5') {
-                        existing.damage += 1;
-                        existing.cooldown -= 25;
-                    } else if (existing.id === 'lightsaber') {
-                        existing.damage += 15;
-                        existing.cooldown -= 75;
-                        existing.projectileSpeed += 100;
-                    } else if (existing.id === 'gjallahorn') {
-                        existing.damage += 20;
-                        existing.cooldown -= 125;
-                        existing.projectileSpeed += 150;
-                    } else if (existing.id === 'dagger') {
-                        // Upgrade da Adaga!
-                        existing.damage += 7;
-                        existing.projectileSpeed += 150;
-                        existing.projectileCount = (existing.projectileCount || 1) + 1; // +1 Adaga!
-                        existing.spinSpeed = (existing.spinSpeed || 4) + 1.5; // Gira mais rápido!
-                    }
+                    aplicarUpgradeDeArma(existing);
                 } else if (chosenItem.type === 'passive') {
                     this.executePassiveBuff(existing.id);
                 }
@@ -164,16 +189,6 @@ class GameSystem {
             spinSpeed: 'Velocidade de Giro'
         };
 
-        // Espelha ESTRITAMENTE os deltas de upgrade aplicados dentro de buyItem() para cada arma
-        const upgradesArma = {
-            p320: { damage: 5, cooldown: -50 },
-            ks_23: { damage: 12 },
-            mp5: { damage: 1, cooldown: -25 },
-            lightsaber: { damage: 15, cooldown: -75, projectileSpeed: 100 },
-            gjallahorn: { damage: 20, cooldown: -125, projectileSpeed: 150 },
-            dagger: { damage: 7, projectileSpeed: 150, projectileCount: 1, spinSpeed: 1.5 }
-        };
-
         // Espelha ESTRITAMENTE os efeitos aplicados dentro de executePassiveBuff() para cada item passivo
         const buffsPassivo = {
             seringa: { atributo: 'baseMoveSpeedMultiplier', label: 'Velocidade', delta: 0.05 },
@@ -197,8 +212,10 @@ class GameSystem {
 
                     comparativo = { tipo: 'novaArma', atributos };
                 } else {
-                    // Upgrade de arma existente: mostra só as diferenças, iguais às de buyItem()
-                    const deltas = upgradesArma[item.id] || {};
+                    // Upgrade de arma existente: mostra só as diferenças. Lê da MESMA tabela
+                    // que o buyItem() aplica, então a carta nunca promete algo diferente do
+                    // que o jogo entrega.
+                    const deltas = UPGRADES_POR_ARMA[item.id] || {};
                     const mudancas = Object.keys(deltas).map(chave => ({
                         label: rotulosArma[chave] || chave,
                         delta: deltas[chave]

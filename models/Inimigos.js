@@ -60,13 +60,14 @@ const TIPOS_INIMIGOS = {
         nome: "Ninfa",
         largura: 75,
         altura: 50,
+        velocidade: 2, // estava faltando: antes caía no padrão 2 do construtor. Mude aqui pra deixar a ninfa mais rápida/lenta.
         vida: 20,
         dano: 10,
         xp: 16,
         knockbackResistencia: 0,
         img: "../Img/ninfa.png",
         frames: 3,
-        tempoFrame: 10,
+        tempoFrame: 100,
 
         // --- Animação de nascimento (a ninfa sai cavando a terra) ---
         // Toca UMA vez, com a ninfa parada, antes dela começar a andar atrás do jogador.
@@ -90,7 +91,7 @@ const TIPOS_INIMIGOS = {
         tempoFrame: 150,
 
         // --- Invocação de ninfas ---
-        intervaloSpawnNinfas: 5000, // ms entre uma leva de ninfas e a próxima. AUMENTE pra spawnar menos vezes, DIMINUA pra spawnar mais.
+        intervaloSpawnNinfas: 8000, // ms entre uma leva de ninfas e a próxima. AUMENTE pra spawnar menos vezes, DIMINUA pra spawnar mais.
         ninfasPorLeva: 9            // quantas ninfas nascem de uma vez
     }
 };
@@ -232,7 +233,7 @@ class Inimigo {
     }
 
     atualizarI(listaInimigos, tirosInimigosNaTela, deltaTime) {
-        // Enquanto a animação de nascimento não acabar, o inimigo fica parado:
+        // Enquanto a animação de nascimento não acabar, o i20nimigo fica parado:
         // não persegue o jogador, não empurra os outros e não causa dano por contato.
         if (this.estado === "spawnando") {
             this.atualizarAnimacaoDeSpawn(deltaTime);
@@ -266,7 +267,7 @@ class Inimigo {
 
             if (this.paradoSpawnando && this.jogo ) {
                 this.timerHabilidade += deltaTime;
-                if (this.timerHabilidade >= 2000) {
+                if (this.timerHabilidade >= 3500) {
                     this.timerHabilidade = 0;
                     this.jogo.spawnarLarvas(this.x, this.y, 1);
                 }

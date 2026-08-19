@@ -24,4 +24,3 @@ class Obj {
         des.drawImage(this.img, this.x, this.y, this.w, this.h)
     }
 }
-

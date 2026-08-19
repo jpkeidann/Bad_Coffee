@@ -265,14 +265,6 @@ let velocidadeCar = 1
 document.addEventListener('keydown', (e) => { keys[e.key] = true })
 document.addEventListener('keyup', (e) => { keys[e.key] = false })
 
-// -------------------------------------------------------------------
-// DEBUG: aperte H para mostrar/esconder as hitboxes reais de tiros e inimigos (ver desenharHitboxesDebug)
-let mostrarHitboxes = false;
-document.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() === 'h') mostrarHitboxes = !mostrarHitboxes;
-});
-// -------------------------------------------------------------------
-
 function controlarPlayers() {
     player.dirX = 0
     player.dirY = 0
@@ -404,6 +396,8 @@ function sincronizarAdagas() {
                     y: atirador.y,
                     w: weapon.projectileW || 87,
                     h: weapon.projectileH || 51,
+                    hitboxW: larguraHitboxDaArma(weapon, 87),
+                    hitboxH: alturaHitboxDaArma(weapon, 51),
                     permanente: true,
                     ultimosHits: new Map() // inimigo -> ms restantes até poder acertar esse mesmo inimigo de novo
                 };
@@ -418,6 +412,16 @@ function sincronizarAdagas() {
             });
         });
     });
+}
+
+// Tamanho da área de acerto de uma bala, lido do catálogo da arma (armas.js).
+// Se a arma não definir hitboxW/hitboxH, usa o tamanho do sprite do projétil.
+function larguraHitboxDaArma(arma, padrao) {
+    return arma?.hitboxW || arma?.projectileW || padrao;
+}
+
+function alturaHitboxDaArma(arma, padrao) {
+    return arma?.hitboxH || arma?.projectileH || padrao;
 }
 
 function controlarTiros(deltaTime, disparosFeitos = []) {
@@ -482,6 +486,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                     tempoVida: 2000,
                     w: armaDoTiro?.projectileW || 36,
                     h: armaDoTiro?.projectileH || 36,
+                    hitboxW: larguraHitboxDaArma(armaDoTiro, 36),
+                    hitboxH: alturaHitboxDaArma(armaDoTiro, 36),
                     frameX: 0,
                     frameTimer: 0,
                     atirador: disparo.atirador
@@ -502,6 +508,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                         tempoVida: 150,
                         w: armaDoTiro?.projectileW || 16,
                         h: armaDoTiro?.projectileH || 16,
+                        hitboxW: larguraHitboxDaArma(armaDoTiro, 16),
+                        hitboxH: alturaHitboxDaArma(armaDoTiro, 16),
                         atirador: disparo.atirador
                     });
                 }
@@ -529,6 +537,8 @@ function controlarTiros(deltaTime, disparosFeitos = []) {
                     isCritical: disparo.isCritical,
                     w: armaDoTiro?.projectileW || 60,
                     h: armaDoTiro?.projectileH || 7,
+                    hitboxW: larguraHitboxDaArma(armaDoTiro, 60),
+                    hitboxH: alturaHitboxDaArma(armaDoTiro, 60),
                     inimigosAtingidosIda: [],
                     inimigosAtingidosVolta: [],
                     atirador: disparo.atirador
@@ -640,60 +650,33 @@ function desenharTiros() {
     });
 }
 
-// DEBUG (tecla H): desenha a hitbox REAL de cada tiro e de cada inimigo, usando as
-// mesmas contas de verificarColisaoTiros() e o mesmo this.hitbox do Inimigo — não é
-// um desenho "parecido", é a forma exata usada nas checagens de colisão.
-function desenharHitboxesDebug() {
-    des.save();
-    des.lineWidth = 1;
-
-    tirosNaTela.forEach(tiro => {
-        des.beginPath();
-        if (tiro.type === 'force') {
-            // verificarColisaoTiros: quadrado de lado tiro.w, SEM rotação, centrado em (tiro.x, tiro.y)
-            des.strokeStyle = "#00ff00";
-            des.rect(tiro.x - tiro.w / 2, tiro.y - tiro.w / 2, tiro.w, tiro.w);
-        } else {
-            // verificarColisaoTiros: círculo de raio 25 centrado em (tiro.x, tiro.y)
-            des.strokeStyle = "#00e5ff";
-            des.arc(tiro.x, tiro.y, 25, 0, Math.PI * 2);
-        }
-        des.stroke();
-    });
-
-    inimigos.forEach(inimigo => {
-        // Inimigos.js -> atualizarHitbox(): x/y/w/h relativos ao canto do sprite
-        des.beginPath();
-        des.strokeStyle = "#ff0040";
-        des.rect(inimigo.x + inimigo.hitbox.x, inimigo.y + inimigo.hitbox.y, inimigo.hitbox.w, inimigo.hitbox.h);
-        des.stroke();
-    });
-
-    des.restore();
-}
-
 function verificarColisaoTiros() {
     for (let i = tirosNaTela.length - 1; i >= 0; i--) {
         let tiro = tirosNaTela[i];
         let tiroColidiu = false;
 
+        // Caixa de acerto do tiro: retângulo centrado em (tiro.x, tiro.y), com o
+        // tamanho definido em armas.js (hitboxW / hitboxH da arma).
+        // Calculada uma vez só por tiro, fora do laço de inimigos.
+        let larguraTiro = tiro.hitboxW || tiro.w || 50;
+        let alturaTiro = tiro.hitboxH || tiro.h || 50;
+        let tiroEsq = tiro.x - larguraTiro / 2;
+        let tiroTopo = tiro.y - alturaTiro / 2;
+
         for (let j = inimigos.length - 1; j >= 0; j--) {
             let inimigo = inimigos[j];
 
-            let centroInimigoX = inimigo.x + inimigo.w / 2;
-            let centroInimigoY = inimigo.y + inimigo.h / 2;
-            let dx = tiro.x - centroInimigoX;
-            let dy = tiro.y - centroInimigoY;
-            let distancia = Math.sqrt(dx * dx + dy * dy);
+            // Caixa do inimigo: o MESMO this.hitbox que Inimigos.js já calcula
+            // (80% do sprite, centralizado). Por isso um Boss grande agora tem uma
+            // área de acerto grande, e uma larva tem uma área pequena.
+            let inimigoEsq = inimigo.x + inimigo.hitbox.x;
+            let inimigoTopo = inimigo.y + inimigo.hitbox.y;
 
-            // Lado do quadrado = comprimento do projétil (armas.js -> projectileW do lightsaber).
-            let colidiu;
-            if (tiro.type === 'force') {
-                let metadeLado = tiro.w / 2;
-                colidiu = Math.abs(dx) < metadeLado && Math.abs(dy) < metadeLado;
-            } else {
-                colidiu = distancia < 25;
-            }
+            // Colisão AABB (retângulo x retângulo): 4 comparações, sem Math.sqrt.
+            let colidiu = tiroEsq < inimigoEsq + inimigo.hitbox.w &&
+                          tiroEsq + larguraTiro > inimigoEsq &&
+                          tiroTopo < inimigoTopo + inimigo.hitbox.h &&
+                          tiroTopo + alturaTiro > inimigoTopo;
 
             if (colidiu) {
                 if (tiro.permanente) {
@@ -716,31 +699,41 @@ function verificarColisaoTiros() {
                 tiroColidiu = true;
 
                 if (tiro.type === 'big_boom') {
-                    let raioExplosao = 120;
+                    let armaBigBoom = sistemaArmas.weapons.find(w => w.projectileType === 'big_boom');
+
+                    // Área de dano da explosão: retângulo centrado no ponto do impacto.
+                    // Tamanho configurável em armas.js (explosionW / explosionH do Gjallahorn).
+                    let larguraExplosao = armaBigBoom?.explosionW || 240;
+                    let alturaExplosao = armaBigBoom?.explosionH || 240;
+                    let explosaoEsq = tiro.x - larguraExplosao / 2;
+                    let explosaoTopo = tiro.y - alturaExplosao / 2;
+
                     for (let k = inimigos.length - 1; k >= 0; k--) {
                         let vitimaArea = inimigos[k];
-                        let cVitimaX = vitimaArea.x + vitimaArea.w / 2;
-                        let cVitimaY = vitimaArea.y + vitimaArea.h / 2;
-                        let ex = tiro.x - cVitimaX;
-                        let ey = tiro.y - cVitimaY;
-                        let distExplosao = Math.sqrt(ex * ex + ey * ey);
+                        let vitimaEsq = vitimaArea.x + vitimaArea.hitbox.x;
+                        let vitimaTopo = vitimaArea.y + vitimaArea.hitbox.y;
 
-                        if (distExplosao <= raioExplosao) {
+                        // Mesma colisão AABB usada nos tiros, sem Math.sqrt
+                        let dentroDaExplosao = explosaoEsq < vitimaEsq + vitimaArea.hitbox.w &&
+                                               explosaoEsq + larguraExplosao > vitimaEsq &&
+                                               explosaoTopo < vitimaTopo + vitimaArea.hitbox.h &&
+                                               explosaoTopo + alturaExplosao > vitimaTopo;
+
+                        if (dentroDaExplosao) {
                             vitimaArea.tomarDano(tiro.damage);
                         }
                     }
 
                     // Som da explosão, tocado no exato instante em que o dano em área é aplicado
-                    let armaBigBoom = sistemaArmas.weapons.find(w => w.projectileType === 'big_boom');
                     if (armaBigBoom) tocarSom(armaBigBoom.somExplosao);
 
-                    // Dispara a animação de explosão 
+                    // Dispara a animação de explosão
                     explosoes.push({
                         x: tiro.x,
                         y: tiro.y,
                         frameX: 0,
                         frameTimer: 0,
-                        tamanho: raioExplosao * 2 // cobre visualmente o raio da explosão
+                        tamanho: Math.max(larguraExplosao, alturaExplosao) // cobre visualmente a área do dano
                     });
                 } else if (tiro.permanente) {
                     // Adaga: dano lido direto da arma (assim upgrades de dano valem na hora),
@@ -1256,6 +1249,46 @@ function iniciarWave() {
     }
 }
 
+// ==========================================
+// 6.1 RETORNO DOS JOGADORES NO FIM DA FASE
+// ==========================================
+// No modo cooperativo, quem morreu volta ao vivo na troca de fase, pra que o
+// parceiro não termine o jogo sozinho. Só vale no 2P: no solo, a morte do
+// Jogador 1 já encerra a partida (gameOver), então não existe fase seguinte.
+
+const PROPORCAO_VIDA_AO_REVIVER = 0.5; // 0.5 = metade da vida máxima. Mude aqui se quiserem mais/menos.
+const DURACAO_AVISO_RETORNO = 2500;    // ms que o aviso "JOGADOR X VOLTOU!" fica na tela
+
+// Devolve um jogador morto ao jogo: metade da vida máxima e posição no centro da tela.
+function reviverJogador(jogador) {
+    jogador.vidaAtual = jogador.vidaMaxima * PROPORCAO_VIDA_AO_REVIVER;
+
+    jogador.x = canvas.width / 2 - jogador.w / 2;
+    jogador.y = canvas.height / 2 - jogador.h / 2;
+}
+
+function reviverJogadoresMortos() {
+    if (estadoJogo !== 'JOGANDO_2P') return;
+
+    let nomes = [];
+    if (player.vidaAtual <= 0) {
+        reviverJogador(player);
+        nomes.push("JOGADOR 1");
+    }
+    if (player2.vidaAtual <= 0) {
+        reviverJogador(player2);
+        nomes.push("JOGADOR 2");
+    }
+
+    if (nomes.length === 0) return;
+
+    // O aviso é escrito AQUI, no instante em que o jogador volta de fato (com a tela
+    // ainda preta), pra ele já estar na tela quando a transição revelar. A fase/wave
+    // continua visível na caixa do HUD lá em cima, então nada de informação se perde.
+    textoMensagemWave = `${nomes.join(" e ")} VOLTOU!`;
+    timerMensagemWave = DURACAO_AVISO_RETORNO;
+}
+
 function verificarFimDaWave() {
     if (inimigosVivos <= 0 && inimigosParaSpawnar <= 0) {
         if (faseAtual === 3 && waveAtual === 3) {
@@ -1280,7 +1313,12 @@ function verificarFimDaWave() {
                 iniciarTransicao({
                     revelarSozinho: true,
                     esperaMinima: PAUSA_TROCA_DE_FASE,
-                    aoCobrir: () => { faseVisual = faseAtual; }
+                    aoCobrir: () => {
+                        faseVisual = faseAtual;
+                        // Revive com a tela já preta: o jogador reaparece no centro
+                        // junto com a fase nova, sem "brotar" na frente de quem sobreviveu.
+                        reviverJogadoresMortos();
+                    }
                 });
             }, delayTransicaoFase);
         } else {
@@ -1404,7 +1442,10 @@ function desenharHUDWave(contexto) {
     contexto.textAlign = "center";
     contexto.textBaseline = "middle";
 
-    let totalRestante = inimigosVivos + inimigosParaSpawnar;
+    // Só "inimigosVivos": ele JÁ representa a wave inteira (nasce com o total da wave
+    // e só diminui em removerInimigo). Somar inimigosParaSpawnar contava os mesmos
+    // inimigos duas vezes, e o número caía sozinho conforme cada um nascia.
+    let totalRestante = inimigosVivos;
     let textoTop = `Fase ${faseAtual} - Wave ${waveAtual}   |   Resta: ${totalRestante}`;
     contexto.fillText(textoTop, canvas.width / 2, yCaixa + (altCaixa / 2));
 
@@ -1610,8 +1651,6 @@ function desenha() {
     inimigos.forEach(inimigo => {
         inimigo.desenhar(des);
     });
-
-    if (mostrarHitboxes) desenharHitboxesDebug();
 
     desenharBarraXP();
     desenharInventarioVisual();
